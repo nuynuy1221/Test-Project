@@ -1,6 +1,13 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(1)
 
+repeat task.wait() until game:IsLoaded()
+local targetPlace = 16146832113
+if game.PlaceId ~= targetPlace then
+    warn("PlaceId ไม่ตรง ไม่เข้าแมพให้")
+    return
+end
+
 local player = game:GetService("Players").LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
 
@@ -63,3 +70,4 @@ while true do
     -- รอให้ระบบรีอัพเดทก่อนเช็คใหม่
     task.wait(10)
 end
+
