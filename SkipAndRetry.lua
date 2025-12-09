@@ -1,3 +1,5 @@
+repeat task.wait() until game:IsLoaded()
+task.wait(2)
 task.spawn(function()
     while true do
         local args = {
@@ -20,3 +22,4 @@ task.spawn(function()
         task.wait(30) -- รอ 30 วิแล้วลูปใหม่
     end
 end)
+
