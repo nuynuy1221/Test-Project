@@ -1,5 +1,5 @@
-Select Luffo.lua
-Equip Luffo.lua
-Entry Map.lua
+SelectLuffo.lua
+EquipLuffo.lua
+EntryMap.lua
 Farm.lua
-Skip and Retry.lua
+SkipAndRetry.lua
