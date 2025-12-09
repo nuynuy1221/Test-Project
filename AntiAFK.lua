@@ -1,7 +1,6 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
-repeat task.wait() until game:IsLoaded()
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
     warn("PlaceId ไม่ตรง ไม่ Anti-AFK ให้")
