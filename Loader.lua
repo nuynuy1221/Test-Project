@@ -1,19 +1,49 @@
--- รอเกมโหลดให้เสร็จ
+----------------------------------------------------------------
+-- 🕒 รอเกมโหลดให้เสร็จ
+----------------------------------------------------------------
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- รอ PlayerGui โผล่มาครบ
-local playerGui = player:WaitForChild("PlayerGui", 30)
-
--- รอให้มี GUI อย่างน้อย 1 อัน (กัน TP แล้ว GUI ยังไม่มา)
-repeat task.wait() until #playerGui:GetChildren() > 0
-task.wait(1) -- กัน lag load asset
+local player = Players.LocalPlayer
 
 ----------------------------------------------------------------
---      เริ่มระบบโหลดไฟล์จาก GitHub หลังจากเกมพร้อมแล้ว
+-- 🕒 ฟังก์ชันรอให้ GUI และ Networking โหลดครบจริง ๆ
+----------------------------------------------------------------
+local function waitForGameReady()
+    -- รอ PlayerGui
+    local playerGui = player:WaitForChild("PlayerGui", 30)
+
+    -- รอให้ GUI ภายในเริ่มโผล่มาบ้าง
+    repeat task.wait() until #playerGui:GetChildren() > 0
+
+    -- รอ HUD ตัวหลัก (เกมนี้ชอบโหลดช้า)
+    repeat task.wait() until playerGui:FindFirstChild("HUD")
+
+    -- รอปุ่มสำคัญ เช่น SkipWave
+    repeat task.wait() until playerGui.HUD:FindFirstChild("SkipWave")
+
+    -- รอ Networking โหลดเสร็จ
+    repeat task.wait() until ReplicatedStorage:FindFirstChild("Networking")
+
+    repeat task.wait() until ReplicatedStorage.Networking:FindFirstChild("Units")
+    repeat task.wait() until ReplicatedStorage.Networking.Units:FindFirstChild("UnitSelectionEvent")
+
+    -- รอ TeleportEvent (บางแมพโหลดช้ามาก)
+    repeat task.wait() until ReplicatedStorage.Networking:FindFirstChild("TeleportEvent")
+
+    task.wait(0.5) -- กันดีเลย์หลังโหลด event
+
+    print("[Loader] Game environment ready.")
+end
+
+waitForGameReady()
+
+----------------------------------------------------------------
+--      เริ่มโหลดไฟล์จาก GitHub หลังจากเกมพร้อมแล้ว
 ----------------------------------------------------------------
 
 local repo = "https://raw.githubusercontent.com/nuynuy1221/Test-Project/main/"
@@ -53,7 +83,7 @@ for _, file in ipairs(files) do
             end)
 
             if not ok then
-                warn("[Loader Error]", file, err)
+                warn("[Loader Error in file:", file .. "]", err)
             end
         end
     end
