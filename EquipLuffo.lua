@@ -1,6 +1,12 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
+local targetPlace = 16146832113
+if game.PlaceId ~= targetPlace then
+    warn("PlaceId ไม่ตรง ไม่ Equip Luffo ให้")
+    return
+end
+
 local player = game:GetService("Players").LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
 local equipEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("EquipEvent")
@@ -59,3 +65,4 @@ task.spawn(function()
 		task.wait(3)
 	end
 end)
+
