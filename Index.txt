@@ -1,0 +1,5 @@
+Select Luffo.lua
+Equip Luffo.lua
+Entry Map.lua
+Farm.lua
+Skip and Retry.lua
