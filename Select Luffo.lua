@@ -1,0 +1,8 @@
+repeat task.wait() until game:IsLoaded()
+
+local args = {
+    [1] = "Select",
+    [2] = "Luffo"
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("UnitSelectionEvent"):FireServer(unpack(args))
