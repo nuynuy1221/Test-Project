@@ -1,0 +1,129 @@
+--== เช็ค PlaceId ก่อนรัน ==--
+local targetPlace = 16277809958
+if game.PlaceId ~= targetPlace then
+    warn("PlaceId ไม่ตรง สคริปต์จะไม่ทำงาน")
+    return
+end
+
+repeat task.wait() until game:IsLoaded()
+task.wait(1)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Networking = ReplicatedStorage:WaitForChild("Networking")
+local UnitEvent = Networking:WaitForChild("UnitEvent")
+
+--------------------------------------------------------------------
+-- 🔍 ฟังก์ชันเช็คเลเวล
+--------------------------------------------------------------------
+local function getLevel()
+    local levelLabel = player.PlayerGui.Hotbar.Main.Level:WaitForChild("Level")
+    local text = levelLabel.Text or ""
+
+    local num = text:match("%d+")  -- ดึงตัวเลขชุดแรกในข้อความ
+    return tonumber(num) or 0
+end
+
+--------------------------------------------------------------------
+-- 🚪 ฟังก์ชันเทเลพอร์ตเมื่อเลเวลถึง 11
+--------------------------------------------------------------------
+local function teleportToLobby()
+    local args = {
+        [1] = "Lobby"
+    }
+
+    game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("TeleportEvent"):FireServer(unpack(args))
+
+    warn("🔥 เลเวลถึง 11 — Teleport กลับ Lobby แล้ว!")
+end
+
+--------------------------------------------------------------------
+-- ⭐ ถ้าเลเวลถึง 11 ให้เทเลพอร์ตทันที และหยุดสคริปต์ทั้งหมด
+--------------------------------------------------------------------
+task.spawn(function()
+    while true do
+        local lv = getLevel()
+
+        if lv >= 11 then
+            teleportToLobby()
+            return  -- ⛔ หยุดทั้งสคริปต์
+        end
+
+        task.wait(1)
+    end
+end)
+
+--------------------------------------------------------------------
+-- ตัวละครที่จะวาง
+--------------------------------------------------------------------
+local unitsToPlace = {
+    {name = "Luffo", id = 39},
+    {name = "Roku",  id = 41}
+}
+
+-- จุดวาง 6 จุด
+local placements = {
+    Vector3.new(427.75726318359375, 2.29998779296875, -347.031005859375),
+    Vector3.new(441.1226501464844, 2.29998779296875, -348.0281677246094),
+    Vector3.new(438.84246826171875, 2.29998779296875, -322.0071716308594),
+    Vector3.new(451.99615478515625, 2.29998779296875, -322.6607971191406),
+    Vector3.new(450.403076171875, 2.29998779296875, -349.50823974609375),
+    Vector3.new(463.7310791015625, 2.29998779296875, -348.7103271484375)
+}
+
+--------------------------------------------------------------------
+-- 🔄 ระบบวางตัวละคร (ลูปทุก 15 วิ)
+--------------------------------------------------------------------
+task.spawn(function()
+    while true do
+        -- ถ้าเลเวลถึงให้หยุดระบบวางทันที
+        if getLevel() >= 11 then return end
+
+        for _, unit in ipairs(unitsToPlace) do
+            for _, pos in ipairs(placements) do
+                local args = {
+                    [1] = "Render",
+                    [2] = {
+                        [1] = unit.name,
+                        [2] = unit.id,
+                        [3] = pos,
+                        [4] = 0
+                    }
+                }
+
+                UnitEvent:FireServer(unpack(args))
+                task.wait(1)
+            end
+        end
+
+        task.wait(15)
+    end
+end)
+
+--------------------------------------------------------------------
+-- 🔄 ระบบอัปเกรด (ลูปไม่มีที่สิ้นสุด)
+--------------------------------------------------------------------
+task.spawn(function()
+    while true do
+        -- ถ้าเลเวลถึงให้หยุดอัปเกรด
+        if getLevel() >= 11 then return end
+
+        local unitsFolder = workspace:WaitForChild("Units")
+
+        for _, unitInstance in ipairs(unitsFolder:GetChildren()) do
+            local uuid = unitInstance.Name
+
+            local args = {
+                [1] = "Upgrade",
+                [2] = uuid
+            }
+
+            UnitEvent:FireServer(unpack(args))
+            task.wait(1)
+        end
+
+        task.wait(1)
+    end
+end)

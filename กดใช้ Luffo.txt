@@ -1,0 +1,61 @@
+repeat task.wait() until game:IsLoaded()
+task.wait(2)
+
+local player = game:GetService("Players").LocalPlayer
+local rep = game:GetService("ReplicatedStorage")
+local equipEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("EquipEvent")
+
+local targetName = "Luffo"
+
+-- Path inventory
+local inventoryPath = player.PlayerGui
+	:WaitForChild("Windows")
+	:WaitForChild("GlobalInventory")
+	:WaitForChild("Holder")
+	:WaitForChild("LeftContainer")
+	:WaitForChild("FakeScrollingFrame")
+	:WaitForChild("Items")
+local cacheContainer = inventoryPath:WaitForChild("CacheContainer")
+
+local lastEquipped = nil  -- กันยิงซ้ำ
+
+-- ฟังก์ชันค้นหา GUID ของ Luffo
+local function findLuffoGUID()
+	for _, item in ipairs(cacheContainer:GetChildren()) do
+		local ok, name = pcall(function()
+			return item.Container.Holder.Main.UnitName.Text
+		end)
+
+		if ok and name == targetName then
+			return item.Name -- GUID
+		end
+	end
+	return nil
+end
+
+-- Auto loop
+task.spawn(function()
+	while true do
+		local guid = findLuffoGUID()
+
+		if guid then
+			if lastEquipped ~= guid then
+				print("✅ พบ Luffo | GUID =", guid)
+
+				local args = {
+					[1] = "Equip",
+					[2] = guid
+				}
+
+				equipEvent:FireServer(unpack(args))
+				print("🎯 Equip สำเร็จ")
+
+				lastEquipped = guid
+			end
+		else
+			print("❌ ไม่พบ Luffo — จะเช็คใหม่…")
+		end
+
+		task.wait(3)
+	end
+end)
