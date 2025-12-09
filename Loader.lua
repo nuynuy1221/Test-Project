@@ -1,50 +1,62 @@
+-- รอเกมโหลดให้เสร็จ
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+local player = game.Players.LocalPlayer
+
+-- รอ PlayerGui โผล่มาครบ
+local playerGui = player:WaitForChild("PlayerGui", 30)
+
+-- รอให้มี GUI อย่างน้อย 1 อัน (กัน TP แล้ว GUI ยังไม่มา)
+repeat task.wait() until #playerGui:GetChildren() > 0
+task.wait(1) -- กัน lag load asset
+
+----------------------------------------------------------------
+--      เริ่มระบบโหลดไฟล์จาก GitHub หลังจากเกมพร้อมแล้ว
+----------------------------------------------------------------
+
 local repo = "https://raw.githubusercontent.com/nuynuy1221/Test-Project/main/"
 local index = "Index.txt"
 
-----------------------------------------------------
--- 🛡 ฟังก์ชันโหลดไฟล์แบบปลอดภัย + retry 3 รอบ
-----------------------------------------------------
-local function safeGet(url)
-    for i = 1, 3 do
-        local ok, res = pcall(function()
-            return game:HttpGet(url)
-        end)
-
-        if ok then
-            return res
-        end
-
-        warn("[Loader] Retry", i, ":", url)
-        task.wait(0.5)
+local function fetch(url)
+    local success, response = pcall(function()
+        return game:HttpGet(url)
+    end)
+    if success then
+        return response
+    else
+        warn("[Loader] Fetch failed:", url)
+        return nil
     end
-
-    error("[Loader] โหลดไฟล์ไม่สำเร็จ: " .. url)
 end
 
-----------------------------------------------------
--- 📄 โหลด Index (รายชื่อไฟล์ทั้งหมด)
-----------------------------------------------------
-local fileList = safeGet(repo .. index)
+-- โหลดรายชื่อไฟล์จาก Index.txt
+local fileList = fetch(repo .. index)
+if not fileList then
+    warn("[Loader] Unable to load Index!")
+    return
+end
+
 local files = string.split(fileList, "\n")
 
-----------------------------------------------------
--- 🔁 โหลดสคริปต์ทั้งหมดตามรายชื่อ
-----------------------------------------------------
 for _, file in ipairs(files) do
-    file = file:gsub("\r", "")  -- ลบ CR จาก Windows
-
+    file = file:gsub("\r", "")
     if file ~= "" and file ~= index then
         local url = repo .. file
         print("[Loader] Loading:", url)
 
-        local success, result = pcall(function()
-            return loadstring(safeGet(url))()
-        end)
+        local content = fetch(url)
+        if content then
+            local ok, err = pcall(function()
+                loadstring(content)()
+            end)
 
-        if not success then
-            warn("[Loader Error] ไฟล์:", file, "->", result)
+            if not ok then
+                warn("[Loader Error]", file, err)
+            end
         end
     end
 end
 
-print("[Loader] ✔ โหลดสคริปต์ทั้งหมดเรียบร้อย")
+print("[Loader] All scripts loaded successfully.")
