@@ -1,3 +1,4 @@
+ReturnAFK.lua
 SelectLuffo.lua
 EquipLuffo.lua
 EntryMap.lua
