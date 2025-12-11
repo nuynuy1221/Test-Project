@@ -1,5 +1,5 @@
 repeat task.wait() until game:IsLoaded()
-task.wait(2)
+task.wait(15)
 
 task.spawn(function()
     while true do
