@@ -21,7 +21,7 @@ task.spawn(function()
         
         local GuiService = game:GetService("GuiService")
          local VirtualInputManager = game:GetService("VirtualInputManager")
-        local button = game:GetService("Players").LocalPlayer.PlayerGui.StageInfo.Holder.Back.Button
+        local button = game:GetService("CoreGui").TopBarApp.TopBarApp.UnibarLeftFrame.UnibarMenu["2"]["3"].chat.IconHitArea_chat
         
         button.Selectable = true
         GuiService.SelectedCoreObject = button
