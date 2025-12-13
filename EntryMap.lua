@@ -50,10 +50,14 @@ local function startMatch()
 end
 
 -- ฟังก์ชันเข้า AFK
-local function doAFK()
-    print("🔥 Level ≥ 11 → AFKEvent Fired")
+local function GoLich()
+    print("🔥 Level ≥ 11 → FallEvent")
 
-    rep.Networking.AFKEvent:FireServer()
+    local args = { "Create", "Infinite" }
+    game:GetService("ReplicatedStorage").Networking.Fall.FallLTMEvent:FireServer(unpack(args))
+    wait(3)
+    local args2 = { "StartMatch" }
+    game:GetService("ReplicatedStorage").Networking.LobbyEvent:FireServer(unpack(args2))
 end
 
 -- ลูปหลัก
@@ -62,7 +66,7 @@ while true do
     print("Player Level:", level)
 
     if level >= 11 then
-        doAFK()
+        GoLich()
     else
         startMatch()
     end
@@ -70,4 +74,5 @@ while true do
     -- รอให้ระบบรีอัพเดทก่อนเช็คใหม่
     task.wait(10)
 end
+
 
