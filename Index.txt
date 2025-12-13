@@ -1,6 +1,7 @@
 ReturnAFK.lua
 SelectLuffo.lua
 EquipUnits.lua
+BuyTraits.lua
 EntryMap.lua
 Farm.lua
 SkipAndRetry.lua
