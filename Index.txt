@@ -1,6 +1,6 @@
 ReturnAFK.lua
 SelectLuffo.lua
-EquipLuffo.lua
+EquipAckers.lua
 EntryMap.lua
 Farm.lua
 SkipAndRetry.lua
