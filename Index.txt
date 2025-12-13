@@ -1,4 +1,3 @@
-ReturnAFK.lua
 SelectLuffo.lua
 EquipUnits.lua
 BuyTraits.lua
