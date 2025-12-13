@@ -8,27 +8,55 @@ if game.PlaceId ~= targetPlace then
     return
 end
 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local GuiService = game:GetService("GuiService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- ฟังก์ชันกดปุ่ม Skip
+local function pressSkipButton()
+    local success, button = pcall(function()
+        return playerGui.SkipWave.Holder.Yes.Button
+    end)
+    
+    if success and button then
+        button.Selectable = true
+        GuiService.SelectedCoreObject = button
+
+        -- กด Enter
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+
+        wait(0.1)
+        GuiService.SelectedCoreObject = nil
+    end
+end
+
+local function pressRetryButton()
+    local success, button = pcall(function()
+        return playerGui.EndScreen.Holder.Buttons.Retry.Button
+    end)
+    
+    if success and button then
+        button.Selectable = true
+        GuiService.SelectedCoreObject = button
+
+        -- กด Enter
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+
+        wait(0.1)
+        GuiService.SelectedCoreObject = nil
+    end
+end
+
+-- เช็คปุ่มทุก 2 วิ
 task.spawn(function()
     while true do
-        local args = {
-            [1] = "Retry"
-        }
-            
-        game:GetService("ReplicatedStorage")
-            :WaitForChild("Networking")
-            :WaitForChild("EndScreen")
-            :WaitForChild("VoteEvent")
-            :FireServer(unpack(args))
-            
-        wait(1)
-            
-        local args = {
-            [1] = "Skip"
-        }
-            
-        game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("SkipWaveEvent"):FireServer(unpack(args))
-        task.wait(5) -- รอ 30 วิแล้วลูปใหม่
+        task.wait(2)
+        pressSkipButton()
+        pressRetryButton()
     end
 end)
-
-
