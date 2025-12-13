@@ -5,9 +5,18 @@ if game.PlaceId ~= targetPlace then
     return
 end
 
-local args = {
+local SelectLuffo = {
     [1] = "Select",
     [2] = "Luffo"
 }
 
-game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("UnitSelectionEvent"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("UnitSelectionEvent"):FireServer(unpack(SelectLuffo))
+
+wait(1)
+
+local LoginGirl = {
+    [1] = "Claim",
+    [2] = 1
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Networking"):WaitForChild("NewPlayerRewardsEvent"):FireServer(unpack(LoginGirl))
