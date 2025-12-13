@@ -3,7 +3,7 @@ task.wait(2)
 
 local targetPlace = 16146832113
 if game.PlaceId ~= targetPlace then
-    warn("PlaceId ไม่ตรง ไม่ Equip Luffo ให้")
+    warn("PlaceId ไม่ตรง ไม่ Equip Ackers ให้")
     return
 end
 
@@ -11,7 +11,7 @@ local player = game:GetService("Players").LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
 local equipEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("EquipEvent")
 
-local targetName = "Luffo"
+local targetName = "Ackers"
 
 -- Path inventory
 local inventoryPath = player.PlayerGui
@@ -25,7 +25,7 @@ local cacheContainer = inventoryPath:WaitForChild("CacheContainer")
 
 local lastEquipped = nil  -- กันยิงซ้ำ
 
--- ฟังก์ชันค้นหา GUID ของ Luffo
+-- ฟังก์ชันค้นหา GUID ของ Ackers
 local function findLuffoGUID()
 	for _, item in ipairs(cacheContainer:GetChildren()) do
 		local ok, name = pcall(function()
@@ -46,7 +46,7 @@ task.spawn(function()
 
 		if guid then
 			if lastEquipped ~= guid then
-				print("✅ พบ Luffo | GUID =", guid)
+				print("✅ พบ Ackers | GUID =", guid)
 
 				local args = {
 					[1] = "Equip",
@@ -59,10 +59,11 @@ task.spawn(function()
 				lastEquipped = guid
 			end
 		else
-			print("❌ ไม่พบ Luffo — จะเช็คใหม่…")
+			print("❌ ไม่พบ Ackers — จะเช็คใหม่…")
 		end
 
 		task.wait(3)
 	end
 end)
+
 
