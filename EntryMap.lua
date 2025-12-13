@@ -49,7 +49,7 @@ local function startMatch()
     print("🚀 ด่านเริ่มต้นแล้ว")
 end
 
--- ฟังก์ชันเข้า AFK
+-- ฟังก์ชันเข้า FallEvent
 local function GoLich()
     print("🔥 Level ≥ 11 → FallEvent")
 
@@ -60,19 +60,62 @@ local function GoLich()
     game:GetService("ReplicatedStorage").Networking.LobbyEvent:FireServer(unpack(args2))
 end
 
+-- =========================
+-- ฟังก์ชันเช็ค Leaves จาก Attribute
+-- =========================
+local function toNumber(str)
+    if not str then return 0 end
+    str = tostring(str):gsub("[^%d.]", "")
+    local firstDot = str:find("%.")
+    if firstDot then
+        str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
+    end
+    return tonumber(str) or 0
+end
+
+local function getLeaves()
+    for _, attrName in ipairs({"Leaves","leaves","Leaf","leaf","LeavesAmount","LeavesEarned"}) do
+        local v = player:GetAttribute(attrName)
+        if v ~= nil then
+            return tonumber(v) or toNumber(v)
+        end
+    end
+    return 0
+end
+
+-- =========================
+-- Events
+-- =========================
+local SummonEvent = ReplicatedStorage:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
+
+-- =========================
+-- Config
+-- =========================
+
+local Summons = {
+    [1] = "SummonMany",
+    [2] = "Fall",
+    [3] = 10
+}
+
 -- ลูปหลัก
 while true do
     local level = getLevel()
-    print("Player Level:", level)
 
     if level >= 11 then
-        GoLich()
+        if leaves >= 1500 then
+            SummonEvent:FireServer(unpack(Summons))
+            task.wait(1)
+        else
+            GoLich()
+        end
     else
         startMatch()
     end
 
     -- รอให้ระบบรีอัพเดทก่อนเช็คใหม่
-    task.wait(10)
+    task.wait(1)
 end
+
 
 
