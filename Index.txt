@@ -1,6 +1,7 @@
 SelectLuffo.lua
 EquipUnits.lua
 BuyTraits.lua
+SellExclusive.lua
 EntryMap.lua
 Farm.lua
 SkipAndRetry.lua
