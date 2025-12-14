@@ -14,7 +14,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Networking = ReplicatedStorage:WaitForChild("Networking")
 local UnitEvent = Networking:WaitForChild("UnitEvent")
 local TeleportEvent = Networking:WaitForChild("TeleportEvent")
-local matchRestartEvent = Networking:WaitForChild("MatchRestartSettingEvent")
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- =========================
@@ -23,7 +22,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local function toNumber(str)
     if not str then return 0 end
     str = tostring(str):gsub("[^%d.]", "")
-    local firstDot = str:find("%.") 
+    local firstDot = str:find("%.")
     if firstDot then
         str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
     end
@@ -73,7 +72,6 @@ task.spawn(function()
         local lv = getLevel()
         local leaves = getLeaves()
 
-        -- อ่าน StageAct ให้เสถียร
         local stageActText
         repeat
             local ok, stageAct = pcall(function()
@@ -86,7 +84,6 @@ task.spawn(function()
             end
         until stageActText
 
-        -- เงื่อนไข teleport
         if lv >= 11 then
             if stageActText == "Fall — Infinite" and leaves >= 100000 then
                 stopScript = true
@@ -129,7 +126,7 @@ local placements2 = {
 }
 
 -- =========================
--- ฟังก์ชันวางตัวละครทีละตัว
+-- ฟังก์ชันวางตัวละคร
 -- =========================
 local function placeUnitsLoop()
     while true do
@@ -156,9 +153,8 @@ local function placeUnitsLoop()
             for _, unit in ipairs(unitsToPlace) do
                 for _, pos in ipairs(placements) do
                     if stopScript then break end
-                    local RenderUnit = {"Render", {unit.name, unit.id, pos, 0}}
                     pcall(function()
-                        UnitEvent:FireServer(unpack(RenderUnit))
+                        UnitEvent:FireServer("Render", {unit.name, unit.id, pos, 0})
                     end)
                     task.wait(0.5)
                 end
@@ -192,30 +188,7 @@ task.spawn(function()
     while true do
         if not stopScript then
             pcall(upgradeUnits)
-            task.wait(1)
-        else
-            task.wait(1)
         end
-    end
-end)
-
--- =========================
--- Vote MatchRestart ตลอดเวลา
--- =========================
-task.spawn(function()
-    while true do
         task.wait(1)
-        local ok, waveObj = pcall(function()
-            return playerGui.HUD.Map.WavesAmount
-        end)
-        local wave = 0
-        if ok and waveObj and waveObj.Text then
-            wave = tonumber(waveObj.Text:match("%d+")) or 0
-        end
-        if wave >= 20 then
-            pcall(function()
-                matchRestartEvent:FireServer("Vote")
-            end)
-        end
     end
 end)
