@@ -9,6 +9,7 @@ end
 
 local player = game:GetService("Players").LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
+local playerGui = player:WaitForChild("PlayerGui")
 
 -- =========================
 -- ฟังก์ชันดึงเลเวลจาก GUI
@@ -66,7 +67,7 @@ end
 local function toNumber(str)
     if not str then return 0 end
     str = tostring(str):gsub("[^%d.]", "")
-    local firstDot = str:find("%.")
+    local firstDot = str:find("%.") 
     if firstDot then
         str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
     end
@@ -81,6 +82,35 @@ local function getLeaves()
         end
     end
     return 0
+end
+
+-- =========================
+-- ฟังก์ชันเช็ค Lich King (ไม่สน GUID)
+-- =========================
+local function hasLichKing()
+    local ok, itemsFolder = pcall(function()
+        local folder = playerGui:FindFirstChild("Windows") and
+                       playerGui.Windows:FindFirstChild("GlobalInventory") and
+                       playerGui.Windows.GlobalInventory:FindFirstChild("Holder") and
+                       playerGui.Windows.GlobalInventory.Holder:FindFirstChild("LeftContainer") and
+                       playerGui.Windows.GlobalInventory.Holder.LeftContainer:FindFirstChild("FakeScrollingFrame") and
+                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame:FindFirstChild("Items") and
+                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame.Items:FindFirstChild("CacheContainer")
+        return folder and folder:GetChildren() or {}
+    end)
+
+    if ok and itemsFolder then
+        for _, item in ipairs(itemsFolder) do
+            local unitNameObj = item:FindFirstChild("Container") and
+                                item.Container:FindFirstChild("Holder") and
+                                item.Container.Holder:FindFirstChild("Main") and
+                                item.Container.Holder.Main:FindFirstChild("UnitName")
+            if unitNameObj and unitNameObj.Text:match("Lich King") then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 -- =========================
@@ -101,11 +131,15 @@ while true do
             SummonEvent:FireServer(unpack(Summons))
             task.wait(1)
         else
-            GoLich() -- เรียกครั้งเดียวหรือเพิ่ม flag เพื่อป้องกัน spam
+            if hasLichKing() then
+                print("⚠️ เจอ Lich King (Ruler) → รอ 60 วินาที")
+                task.wait(60)
+            end
+            GoLich() -- เรียก FallEvent หลังจากรอถ้าเจอ Lich King
         end
     else
         startMatch()
     end
 
-    task.wait(1) -- รอรอบถัดไป
+    task.wait(1)
 end
