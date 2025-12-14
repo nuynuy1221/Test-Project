@@ -1,6 +1,7 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
+--== เช็ค PlaceId ก่อนรัน ==--
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
     return
@@ -16,12 +17,8 @@ local Networking = ReplicatedStorage:WaitForChild("Networking")
 -- ฟังก์ชัน Skip Wave
 -- =========================
 local function pressSkipButton()
-    local args = {
-        [1] = "Skip"
-    }
-
     pcall(function()
-        Networking:WaitForChild("SkipWaveEvent"):FireServer(unpack(args))
+        Networking:WaitForChild("SkipWaveEvent"):FireServer("Skip")
     end)
 end
 
@@ -29,12 +26,22 @@ end
 -- ฟังก์ชัน Vote Retry
 -- =========================
 local function pressRetryButton()
-    local args = {
-        [1] = "Retry"
-    }
-
     pcall(function()
-        Networking:WaitForChild("EndScreen"):WaitForChild("VoteEvent"):FireServer(unpack(args))
+        Networking
+            :WaitForChild("EndScreen")
+            :WaitForChild("VoteEvent")
+            :FireServer("Retry")
+    end)
+end
+
+-- =========================
+-- ฟังก์ชัน Vote MatchRestart
+-- =========================
+local function voteMatchRestart()
+    pcall(function()
+        Networking
+            :WaitForChild("MatchRestartSettingEvent")
+            :FireServer("Vote")
     end)
 end
 
@@ -45,6 +52,13 @@ task.spawn(function()
     while true do
         task.wait(2)
         pressSkipButton()
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(15)
         pressRetryButton()
+        voteMatchRestart()
     end
 end)
