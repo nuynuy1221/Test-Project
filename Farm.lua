@@ -85,7 +85,7 @@ task.spawn(function()
         until stageActText
 
         if lv >= 11 then
-            if stageActText == "Fall — Infinite" and leaves >= 100000 then
+            if stageActText == "Fall — Infinite" and leaves >= 45000 then
                 stopScript = true
                 teleportToLobby()
             elseif stageActText ~= "Fall — Infinite" then
@@ -190,5 +190,6 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
 
 
