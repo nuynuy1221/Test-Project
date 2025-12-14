@@ -132,8 +132,8 @@ while true do
             task.wait(1)
         else
             if hasLichKing() then
-                print("⚠️ เจอ Lich King (Ruler) → รอ 60 วินาที")
-                task.wait(180)
+                print("⚠️ เจอ Lich King (Ruler) → รอ 5 วินาที")
+                task.wait(5)
             end
             GoLich() -- เรียก FallEvent หลังจากรอถ้าเจอ Lich King
         end
@@ -143,4 +143,5 @@ while true do
 
     task.wait(1)
 end
+
 
