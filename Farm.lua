@@ -15,7 +15,6 @@ local Networking = ReplicatedStorage:WaitForChild("Networking")
 local UnitEvent = Networking:WaitForChild("UnitEvent")
 local TeleportEvent = Networking:WaitForChild("TeleportEvent")
 local matchRestartEvent = Networking:WaitForChild("MatchRestartSettingEvent")
-
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- =========================
@@ -32,7 +31,7 @@ local function toNumber(str)
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Level / Leaves จาก Attribute
+-- ฟังก์ชันเช็ค Level / Leaves
 -- =========================
 local function getLevel()
     for _, attrName in ipairs({"Level","level","PlayerLevel","Player_Level"}) do
@@ -70,24 +69,29 @@ local stopScript = false
 -- =========================
 task.spawn(function()
     while true do
-        task.wait(2)
+        task.wait(1)
         local lv = getLevel()
         local leaves = getLeaves()
-        local stageActText = nil
-        local ok, stageAct = pcall(function()
-            return playerGui.Guides.List.StageInfo.StageFrame.StageAct
-        end)
-        if ok and stageAct and stageAct.Text then
-            stageActText = stageAct.Text
-        end
 
-        if lv == 11 then
-            if stageActText == "Fall — Infinite" then
-                if leaves == 100000 then
-                    stopScript = true
-                    teleportToLobby()
-                end
+        -- อ่าน StageAct ให้เสถียร
+        local stageActText
+        repeat
+            local ok, stageAct = pcall(function()
+                return playerGui.Guides.List.StageInfo.StageFrame:WaitForChild("StageAct",3)
+            end)
+            if ok and stageAct and stageAct.Text then
+                stageActText = stageAct.Text
             else
+                task.wait(0.5)
+            end
+        until stageActText
+
+        -- เงื่อนไข teleport
+        if lv >= 11 then
+            if stageActText == "Fall — Infinite" and leaves >= 100000 then
+                stopScript = true
+                teleportToLobby()
+            elseif stageActText ~= "Fall — Infinite" then
                 stopScript = true
                 teleportToLobby()
             end
@@ -106,7 +110,7 @@ local unitsToPlace1 = {
 }
 
 local unitsToPlace2 = {
-    {name = "Ackers",  id = 241}
+    {name = "Ackers", id = 241}
 }
 
 local placements1 = {
@@ -127,8 +131,9 @@ local placements2 = {
 -- =========================
 -- ฟังก์ชันวางตัวละคร
 -- =========================
-local function placeUnits(unitsToPlace1, placements1, unitsToPlace2, placements2)
-    local stageActText = nil
+local function placeUnits()
+    -- เช็ค StageAct
+    local stageActText
     local ok, stageAct = pcall(function()
         return playerGui.Guides.List.StageInfo.StageFrame.StageAct
     end)
@@ -155,23 +160,23 @@ local function placeUnits(unitsToPlace1, placements1, unitsToPlace2, placements2
             if not success then
                 warn("เกิดปัญหาในการวางตัว: "..err)
             end
-            task.wait(1)
+            task.wait(0.5) -- ลด delay ให้วางเร็วขึ้น
         end
     end
 end
 
 -- =========================
--- ฟังก์ชันวางตัว + Retry
+-- วางตัวละคร + Retry
 -- =========================
 task.spawn(function()
     while true do
         if not stopScript then
-            local ok, err = pcall(placeUnits, unitsToPlace1, placements1, unitsToPlace2, placements2)
+            local ok, err = pcall(placeUnits)
             if not ok then
-                warn("ระบบวางตัวเกิดปัญหา — Retry ใน 2 วินาที: "..tostring(err))
+                warn("Retry ระบบวางตัวละครใน 2 วิ: "..tostring(err))
                 task.wait(2)
             else
-                task.wait(5)
+                task.wait(3)
             end
         else
             task.wait(1)
@@ -192,7 +197,7 @@ local function upgradeUnits()
         if not success then
             warn("ระบบอัปเกรดเกิดปัญหา: "..err)
         end
-        task.wait(1)
+        task.wait(0.5)
     end
 end
 
@@ -242,7 +247,6 @@ task.spawn(function()
         local wave = getWaveAmount()
         if wave >= 20 then
             voteMatchRestart()
-            break
         end
     end
 end)
