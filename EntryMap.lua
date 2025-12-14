@@ -26,7 +26,7 @@ local function startMatch()
     print("📌 Level ต่ำกว่า 11 → เข้าด่าน Story อัตโนมัติ")
 
     -- AddMatch
-    local args1 = {
+    local Namek1 = {
         [1] = "AddMatch",
         [2] = {
             ["Difficulty"] = "Normal",
@@ -36,15 +36,15 @@ local function startMatch()
             ["FriendsOnly"] = false
         }
     }
-    rep.Networking.LobbyEvent:FireServer(unpack(args1))
+    rep.Networking.LobbyEvent:FireServer(unpack(Namek1))
 
     task.wait(3)
 
     -- StartMatch
-    local args2 = {
+    local Namek2 = {
         [1] = "StartMatch"
     }
-    rep.Networking.LobbyEvent:FireServer(unpack(args2))
+    rep.Networking.LobbyEvent:FireServer(unpack(Namek2))
 
     print("🚀 ด่านเริ่มต้นแล้ว")
 end
@@ -116,6 +116,7 @@ while true do
     -- รอให้ระบบรีอัพเดทก่อนเช็คใหม่
     task.wait(1)
 end
+
 
 
 
