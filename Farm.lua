@@ -111,12 +111,7 @@ local unitsToPlace2 = {
 }
 
 local placements1 = {
-    Vector3.new(427.757, 2.3, -347.031),
-    Vector3.new(441.123, 2.3, -348.028),
-    Vector3.new(438.842, 2.3, -322.007),
-    Vector3.new(451.996, 2.3, -322.661),
-    Vector3.new(450.403, 2.3, -349.508),
-    Vector3.new(463.731, 2.3, -348.710)
+    Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
 }
 
 local placements2 = {
@@ -146,7 +141,7 @@ local function placeUnitsLoop()
                 unitsToPlace = unitsToPlace2
                 placements   = placements2
             else
-                unitsToPlace = unitsToPlace1
+                unitsToPlace = unitsToPlace2
                 placements   = placements1
             end
 
@@ -192,3 +187,4 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
