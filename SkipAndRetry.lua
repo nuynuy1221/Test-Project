@@ -27,10 +27,7 @@ end
 -- =========================
 local function pressRetryButton()
     pcall(function()
-        Networking
-            :WaitForChild("EndScreen")
-            :WaitForChild("VoteEvent")
-            :FireServer("Retry")
+        Networking:WaitForChild("EndScreen"):WaitForChild("VoteEvent"):FireServer("Retry")
     end)
 end
 
@@ -39,14 +36,25 @@ end
 -- =========================
 local function voteMatchRestart()
     pcall(function()
-        Networking
-            :WaitForChild("MatchRestartSettingEvent")
-            :FireServer("Vote")
+        Networking:WaitForChild("MatchRestartSettingEvent"):FireServer("Vote")
     end)
 end
 
 -- =========================
--- Loop ทุก 2 วินาที
+-- ฟังก์ชันเช็ค Wave
+-- =========================
+local function getWave()
+    local ok, waveObj = pcall(function()
+        return playerGui.HUD.Map.WavesAmount
+    end)
+    if ok and waveObj and waveObj.Text then
+        return tonumber(waveObj.Text:match("%d+")) or 0
+    end
+    return 0
+end
+
+-- =========================
+-- Loop ทุก 2 วินาที สำหรับ Skip
 -- =========================
 task.spawn(function()
     while true do
@@ -55,10 +63,17 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- Loop ทุก 15 วินาที สำหรับ Retry + Vote MatchRestart เฉพาะ Wave >= 20
+-- =========================
 task.spawn(function()
     while true do
         task.wait(15)
         pressRetryButton()
-        voteMatchRestart()
+
+        local wave = getWave()
+        if wave >= 20 then
+            voteMatchRestart()
+        end
     end
 end)
