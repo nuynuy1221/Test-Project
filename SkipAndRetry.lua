@@ -41,14 +41,15 @@ local function voteMatchRestart()
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Wave
+-- ฟังก์ชันเช็ค Wave (ใช้ ContentText และดึงเลขก่อน '/')
 -- =========================
 local function getWave()
     local ok, waveObj = pcall(function()
         return playerGui.HUD.Map.WavesAmount
     end)
-    if ok and waveObj and waveObj.Text then
-        return tonumber(waveObj.Text:match("%d+")) or 0
+    if ok and waveObj and waveObj.ContentText then
+        local waveNumberStr = waveObj.ContentText:match("^(%d+)")
+        return tonumber(waveNumberStr) or 0
     end
     return 0
 end
