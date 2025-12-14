@@ -1,6 +1,7 @@
 UI.lua
 SelectLuffo.lua
 EquipUnits.lua
+AutoFuse.lua
 BuyTraits.lua
 SellExclusive.lua
 EntryMap.lua
