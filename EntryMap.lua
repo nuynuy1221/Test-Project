@@ -1,7 +1,6 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(1)
 
-repeat task.wait() until game:IsLoaded()
 local targetPlace = 16146832113
 if game.PlaceId ~= targetPlace then
     warn("PlaceId ไม่ตรง ไม่เข้าแมพให้")
@@ -11,17 +10,19 @@ end
 local player = game:GetService("Players").LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
 
--- Reference จุดที่มีข้อมูลเลเวล
-local levelLabel = player.PlayerGui.HUD.Main.Level:WaitForChild("Level")
-
--- ฟังก์ชันดึงเลเวลจากข้อความ เช่น "Level 6 (0/300)"
+-- =========================
+-- ฟังก์ชันดึงเลเวลจาก GUI
+-- =========================
 local function getLevel()
+    local levelLabel = player.PlayerGui.HUD.Main.Level:WaitForChild("Level")
     local text = levelLabel.Text or ""
     local number = string.match(text, "Level%s+(%d+)")
     return tonumber(number) or 0
 end
 
--- ฟังก์ชันเข้าสู่แมทช์
+-- =========================
+-- ฟังก์ชันเข้าสู่แมทช์ Story
+-- =========================
 local function startMatch()
     print("📌 Level ต่ำกว่า 11 → เข้าด่าน Story อัตโนมัติ")
 
@@ -37,27 +38,26 @@ local function startMatch()
         }
     }
     rep.Networking.LobbyEvent:FireServer(unpack(Namek1))
-
     task.wait(3)
 
     -- StartMatch
-    local Namek2 = {
-        [1] = "StartMatch"
-    }
+    local Namek2 = { [1] = "StartMatch" }
     rep.Networking.LobbyEvent:FireServer(unpack(Namek2))
 
     print("🚀 ด่านเริ่มต้นแล้ว")
 end
 
--- ฟังก์ชันเข้า FallEvent
+-- =========================
+-- ฟังก์ชัน FallEvent / Lich
+-- =========================
 local function GoLich()
     print("🔥 Level ≥ 11 → FallEvent")
 
-    local args = { "Create", "Infinite" }
-    game:GetService("ReplicatedStorage").Networking.Fall.FallLTMEvent:FireServer(unpack(args))
-    wait(3)
-    local args2 = { "StartMatch" }
-    game:GetService("ReplicatedStorage").Networking.LobbyEvent:FireServer(unpack(args2))
+    local args = {"Create", "Infinite"}
+    rep.Networking.Fall.FallLTMEvent:FireServer(unpack(args))
+    task.wait(3)
+    local args2 = {"StartMatch"}
+    rep.Networking.LobbyEvent:FireServer(unpack(args2))
 end
 
 -- =========================
@@ -84,40 +84,28 @@ local function getLeaves()
 end
 
 -- =========================
--- Events
+-- Event
 -- =========================
-local SummonEvent = ReplicatedStorage:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
+local SummonEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
+local Summons = { [1]="SummonMany", [2]="Fall", [3]=10 }
 
 -- =========================
--- Config
--- =========================
-
-local Summons = {
-    [1] = "SummonMany",
-    [2] = "Fall",
-    [3] = 10
-}
-
 -- ลูปหลัก
+-- =========================
 while true do
     local level = getLevel()
-    local leaves = getLeaves() -- ต้องดึง Leaves ก่อนเช็ค
+    local leaves = getLeaves()
 
     if level >= 11 then
         if leaves >= 1500 then
             SummonEvent:FireServer(unpack(Summons))
             task.wait(1)
         else
-            GoLich()
+            GoLich() -- เรียกครั้งเดียวหรือเพิ่ม flag เพื่อป้องกัน spam
         end
     else
         startMatch()
     end
 
-    -- รอให้ระบบรีอัพเดทก่อนเช็คใหม่
-    task.wait(1)
+    task.wait(1) -- รอรอบถัดไป
 end
-
-
-
-
