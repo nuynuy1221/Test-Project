@@ -162,9 +162,9 @@ local function placeUnitsLoop()
                     pcall(function()
                         UnitEvent:FireServer(unpack(RenderUnit))
                     end)
-                    task.wait(0.5) -- delay ระหว่างตัวละครแต่ละตัว
+                    task.wait(2) -- delay ระหว่างตัวละครแต่ละตัว
                 end
-                task.wait(0.5) -- delay หลังวางแต่ละ unit
+                task.wait(2) -- delay หลังวางแต่ละ unit
             end
 
             task.wait(2) -- delay หลังวางครบชุด ก่อนวนลูปใหม่
@@ -186,7 +186,7 @@ local function upgradeUnits()
         pcall(function()
             UnitEvent:FireServer("Upgrade", unitInstance.Name)
         end)
-        task.wait(0.5) -- delay เล็กน้อยเพื่อไม่ให้ระบบล้น
+        task.wait(2) -- delay เล็กน้อยเพื่อไม่ให้ระบบล้น
     end
 end
 
@@ -234,6 +234,7 @@ task.spawn(function()
         end
     end
 end)
+
 
 
 
