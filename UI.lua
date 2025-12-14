@@ -1,17 +1,20 @@
 repeat task.wait() until game:IsLoaded()
+
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
 
--- สร้าง ScreenGui
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- =========================
+-- GUI HUD
+-- =========================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ColorfulStatusHUD"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 9999
 screenGui.Parent = playerGui
 
--- ฟังก์ชันสร้างแถบใหญ่ตรงกลางพร้อมสีสันและอีโมจิ
 local function createBar(name, posScale, bgColor, emoji)
     local frame = Instance.new("Frame")
     frame.Name = name
@@ -21,80 +24,89 @@ local function createBar(name, posScale, bgColor, emoji)
     frame.BackgroundColor3 = bgColor
     frame.BackgroundTransparency = 0.35
     frame.BorderSizePixel = 0
-    frame.Parent = screenGui
     frame.ZIndex = 10
+    frame.Parent = screenGui
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0,20)
-    corner.Parent = frame
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,20)
 
-    local stroke = Instance.new("UIStroke")
+    local stroke = Instance.new("UIStroke", frame)
     stroke.Color = bgColor:lerp(Color3.new(1,1,1),0.3)
     stroke.Thickness = 4
-    stroke.Parent = frame
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1,0,1,0)
-    label.Position = UDim2.new(0,0,0,0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.TextColor3 = Color3.new(1,1,1)
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
     label.Text = emoji.." "..name
-    label.Parent = frame
     label.ZIndex = 11
+    label.Parent = frame
 
     return label
 end
 
--- สร้าง 4 แถบ: User / Level / Leaves / Lich King
 local userLabel   = createBar("User", 0.18, Color3.fromRGB(52,152,219), "🧑")
 local levelLabel  = createBar("Level", 0.36, Color3.fromRGB(46,204,113), "🏆")
 local leavesLabel = createBar("Leaves", 0.54, Color3.fromRGB(241,196,15), "🍀")
 local lichLabel   = createBar("LichKing", 0.72, Color3.fromRGB(231,76,60), "👑")
 
--- ตั้งค่า Attribute ถ้าไม่มี
+-- =========================
+-- Attribute
+-- =========================
 if player:GetAttribute("HasLichKing") == nil then
     player:SetAttribute("HasLichKing", false)
 end
 
--- ฟังก์ชันเช็ค Level
+-- =========================
+-- Helper
+-- =========================
+local function getAttr(list)
+    for _, name in ipairs(list) do
+        local v = player:GetAttribute(name)
+        if v ~= nil then return tonumber(v) end
+    end
+    return 0
+end
+
 local function getLevel()
-    for _, attr in ipairs({"Level","level","PlayerLevel","Player_Level"}) do
-        local v = player:GetAttribute(attr)
-        if v ~= nil then return tonumber(v) end
-    end
-    return 0
+    return getAttr({"Level","level","PlayerLevel","Player_Level"})
 end
 
--- ฟังก์ชันเช็ค Leaves
 local function getLeaves()
-    for _, attr in ipairs({"Leaves","leaves","Leaf","leaf","LeavesAmount","LeavesEarned"}) do
-        local v = player:GetAttribute(attr)
-        if v ~= nil then return tonumber(v) end
-    end
-    return 0
+    return getAttr({"Leaves","leaves","Leaf","leaf","LeavesAmount"})
 end
 
--- ฟังก์ชันเช็ค Lich King ใน Inventory ไม่สน GUID
-local function checkLichKing()
-    local ok, itemsFolder = pcall(function()
-        local folder = playerGui:FindFirstChild("Windows") and
-                       playerGui.Windows:FindFirstChild("GlobalInventory") and
-                       playerGui.Windows.GlobalInventory:FindFirstChild("Holder") and
-                       playerGui.Windows.GlobalInventory.Holder:FindFirstChild("LeftContainer") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer:FindFirstChild("FakeScrollingFrame") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame:FindFirstChild("Items") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame.Items:FindFirstChild("CacheContainer")
-        return folder and folder:GetChildren() or {}
+-- =========================
+-- 🔍 เช็ค Lich จาก Units GUI (ไม่สน GUID)
+-- =========================
+local TARGET = "lich"
+
+local function getUnitsContainer()
+    local ok, container = pcall(function()
+        return playerGui
+            .Windows
+            .Units
+            .Holder
+            .Main
+            .Units
     end)
-    if ok and itemsFolder then
-        for _, item in ipairs(itemsFolder) do
-            local unitNameObj = item:FindFirstChild("Container") and
-                                item.Container:FindFirstChild("Holder") and
-                                item.Container.Holder:FindFirstChild("Main") and
-                                item.Container.Holder.Main:FindFirstChild("UnitName")
-            if unitNameObj and unitNameObj.Text:match("Lich King") then
+    return ok and container or nil
+end
+
+local function checkLichFromUnits()
+    local units = getUnitsContainer()
+    if not units then return false end
+
+    for _, unitItem in ipairs(units:GetChildren()) do
+        local ok, nameLabel = pcall(function()
+            return unitItem.Container.Holder.Main.UnitName
+        end)
+
+        if ok and nameLabel and nameLabel.Text then
+            if nameLabel.Text:lower():find(TARGET) then
+                -- 🔑 เจอ Lich + GUID
+                -- print("FOUND LICH | GUID =", unitItem.Name)
                 return true
             end
         end
@@ -102,16 +114,16 @@ local function checkLichKing()
     return false
 end
 
--- อัปเดต UI ทุก Frame
+-- =========================
+-- Update HUD
+-- =========================
 RunService.RenderStepped:Connect(function()
-    userLabel.Text   = "👤 User : "..player.Name
-    levelLabel.Text  = "🔵 Level : "..tostring(getLevel())
-    leavesLabel.Text = "🍀 Leaves : "..tostring(getLeaves())
+    userLabel.Text   = "🤖 User : "..player.Name
+    levelLabel.Text  = "⬆️ Level : "..getLevel()
+    leavesLabel.Text = "🍀 Leaves : "..getLeaves()
 
-    -- เช็ค Lich King และเซฟ Attribute
-    if checkLichKing() then
-        player:SetAttribute("HasLichKing", true)
-    end
-    local hasLich = player:GetAttribute("HasLichKing")
+    local hasLich = checkLichFromUnits()
+    player:SetAttribute("HasLichKing", hasLich)
+
     lichLabel.Text = "👑 Lich King : "..(hasLich and "✅" or "❌")
 end)
