@@ -111,7 +111,10 @@ local unitsToPlace2 = {
 }
 
 local placements1 = {
+    Vector3.new(445.17132568359375, 2.29998779296875, -342.4508056640625),
+    Vector3.new(445.14013671875, 2.29998779296875, -346.05340576171875),
     Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
+
 }
 
 local placements2 = {
@@ -187,4 +190,5 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
 
