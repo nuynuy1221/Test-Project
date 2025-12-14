@@ -3,10 +3,11 @@ task.wait(2)
 
 local targetPlace = 16146832113
 if game.PlaceId ~= targetPlace then
-    warn("PlaceId ไม่ตรง ไม่ EquipUnits ให้")
+    warn("PlaceId ไม่ตรง — ไม่ EquipUnits ให้")
     return
 end
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ShopEvent = ReplicatedStorage:WaitForChild("Networking"):WaitForChild("Summer"):WaitForChild("ShopEvent")
 
 local BuyTraits = {
@@ -15,6 +16,11 @@ local BuyTraits = {
 }
 
 for i = 1, 6 do
-  ShopEvent:FireServer(unpack(BuyTraits))
-  task.wait(0.5)
+    local success, err = pcall(function()
+        ShopEvent:FireServer(unpack(BuyTraits))
+    end)
+    if not success then
+        warn("เกิดปัญหา FireServer: "..tostring(err))
+    end
+    task.wait(1) -- เพิ่ม delay กัน server block
 end
