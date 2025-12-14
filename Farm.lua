@@ -23,7 +23,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local function toNumber(str)
     if not str then return 0 end
     str = tostring(str):gsub("[^%d.]", "")
-    local firstDot = str:find("%.")
+    local firstDot = str:find("%.") 
     if firstDot then
         str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
     end
@@ -136,7 +136,6 @@ local function placeUnitsLoop()
         if stopScript then
             task.wait(1)
         else
-            -- เช็ค StageAct
             local stageActText
             local ok, stageAct = pcall(function()
                 return playerGui.Guides.List.StageInfo.StageFrame.StageAct
@@ -154,7 +153,6 @@ local function placeUnitsLoop()
                 placements   = placements1
             end
 
-            -- วางทีละตัวตามตำแหน่ง
             for _, unit in ipairs(unitsToPlace) do
                 for _, pos in ipairs(placements) do
                     if stopScript then break end
@@ -162,23 +160,20 @@ local function placeUnitsLoop()
                     pcall(function()
                         UnitEvent:FireServer(unpack(RenderUnit))
                     end)
-                    task.wait(2) -- delay ระหว่างตัวละครแต่ละตัว
+                    task.wait(0.5)
                 end
-                task.wait(2) -- delay หลังวางแต่ละ unit
+                task.wait(0.5)
             end
 
-            task.wait(2) -- delay หลังวางครบชุด ก่อนวนลูปใหม่
+            task.wait(2)
         end
     end
 end
 
--- =========================
--- เรียกใช้งาน
--- =========================
 task.spawn(placeUnitsLoop)
 
 -- =========================
--- ฟังก์ชันอัปเกรดตัวละคร (อัปเกรดต่อเนื่อง)
+-- ฟังก์ชันอัปเกรดตัวละคร
 -- =========================
 local function upgradeUnits()
     local unitsFolder = workspace:WaitForChild("Units")
@@ -186,7 +181,7 @@ local function upgradeUnits()
         pcall(function()
             UnitEvent:FireServer("Upgrade", unitInstance.Name)
         end)
-        task.wait(2) -- delay เล็กน้อยเพื่อไม่ให้ระบบล้น
+        task.wait(0.5)
     end
 end
 
@@ -196,8 +191,8 @@ end
 task.spawn(function()
     while true do
         if not stopScript then
-            pcall(upgradeUnits)   -- ส่งคำสั่งอัปเกรดไปเรื่อย ๆ
-            task.wait(1)          -- ลูปใหม่ทุก 1 วินาที
+            pcall(upgradeUnits)
+            task.wait(1)
         else
             task.wait(1)
         end
@@ -205,36 +200,22 @@ task.spawn(function()
 end)
 
 -- =========================
--- เช็ค Wave = 20 เพื่อ Vote MatchRestart
+-- Vote MatchRestart ตลอดเวลา
 -- =========================
-local function getWaveAmount()
-    local ok, waveObj = pcall(function()
-        return playerGui.HUD.Map.WavesAmount
-    end)
-    if ok and waveObj and waveObj.Text then
-        local wave = tonumber(waveObj.Text:match("%d+"))
-        return wave or 0
-    end
-    return 0
-end
-
-local function voteMatchRestart()
-    pcall(function()
-        matchRestartEvent:FireServer("Vote")
-    end)
-    print("✅ Vote MatchRestart ส่งแล้ว")
-end
-
 task.spawn(function()
     while true do
         task.wait(1)
-        local wave = getWaveAmount()
+        local ok, waveObj = pcall(function()
+            return playerGui.HUD.Map.WavesAmount
+        end)
+        local wave = 0
+        if ok and waveObj and waveObj.Text then
+            wave = tonumber(waveObj.Text:match("%d+")) or 0
+        end
         if wave >= 20 then
-            voteMatchRestart()
+            pcall(function()
+                matchRestartEvent:FireServer("Vote")
+            end)
         end
     end
 end)
-
-
-
-
