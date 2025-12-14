@@ -1,12 +1,12 @@
+repeat task.wait() until game:IsLoaded()
+task.wait(1)
+
 --== เช็ค PlaceId ก่อนรัน ==--
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
     warn("PlaceId ไม่ตรง สคริปต์จะไม่ทำงาน")
     return
 end
-
-repeat task.wait() until game:IsLoaded()
-task.wait(1)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -250,3 +250,4 @@ task.spawn(function()
         end
     end
 end)
+
