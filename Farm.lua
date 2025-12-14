@@ -178,35 +178,26 @@ end
 task.spawn(placeUnitsLoop)
 
 -- =========================
--- ฟังก์ชันอัปเกรดตัวละคร
+-- ฟังก์ชันอัปเกรดตัวละคร (อัปเกรดต่อเนื่อง)
 -- =========================
 local function upgradeUnits()
     local unitsFolder = workspace:WaitForChild("Units")
     for _, unitInstance in ipairs(unitsFolder:GetChildren()) do
-        if stopScript then return end
-        local success, err = pcall(function()
+        pcall(function()
             UnitEvent:FireServer("Upgrade", unitInstance.Name)
         end)
-        if not success then
-            warn("ระบบอัปเกรดเกิดปัญหา: "..err)
-        end
-        task.wait(0.5)
+        task.wait(0.5) -- delay เล็กน้อยเพื่อไม่ให้ระบบล้น
     end
 end
 
 -- =========================
--- ระบบอัปเกรด + Retry
+-- ระบบอัปเกรดต่อเนื่อง
 -- =========================
 task.spawn(function()
     while true do
         if not stopScript then
-            local ok, err = pcall(upgradeUnits)
-            if not ok then
-                warn("Retry ระบบอัปเกรดใน 2 วิ: "..tostring(err))
-                task.wait(2)
-            else
-                task.wait(1)
-            end
+            pcall(upgradeUnits)   -- ส่งคำสั่งอัปเกรดไปเรื่อย ๆ
+            task.wait(1)          -- ลูปใหม่ทุก 1 วินาที
         else
             task.wait(1)
         end
@@ -243,5 +234,6 @@ task.spawn(function()
         end
     end
 end)
+
 
 
