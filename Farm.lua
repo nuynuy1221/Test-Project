@@ -129,60 +129,53 @@ local placements2 = {
 }
 
 -- =========================
--- ฟังก์ชันวางตัวละคร
+-- ฟังก์ชันวางตัวละครทีละตัว
 -- =========================
-local function placeUnits()
-    -- เช็ค StageAct
-    local stageActText
-    local ok, stageAct = pcall(function()
-        return playerGui.Guides.List.StageInfo.StageFrame.StageAct
-    end)
-    if ok and stageAct and stageAct.Text then
-        stageActText = stageAct.Text
-    end
-
-    local unitsToPlace, placements
-    if stageActText == "Fall — Infinite" then
-        unitsToPlace = unitsToPlace2
-        placements   = placements2
-    else
-        unitsToPlace = unitsToPlace1
-        placements   = placements1
-    end
-
-    for _, unit in ipairs(unitsToPlace) do
-        for _, pos in ipairs(placements) do
-            if stopScript then return end
-            local args = {"Render", {unit.name, unit.id, pos, 0}}
-            local success, err = pcall(function()
-                UnitEvent:FireServer(unpack(args))
+local function placeUnitsLoop()
+    while true do
+        if stopScript then
+            task.wait(1)
+        else
+            -- เช็ค StageAct
+            local stageActText
+            local ok, stageAct = pcall(function()
+                return playerGui.Guides.List.StageInfo.StageFrame.StageAct
             end)
-            if not success then
-                warn("เกิดปัญหาในการวางตัว: "..err)
+            if ok and stageAct and stageAct.Text then
+                stageActText = stageAct.Text
             end
-            task.wait(0.5) -- ลด delay ให้วางเร็วขึ้น
+
+            local unitsToPlace, placements
+            if stageActText == "Fall — Infinite" then
+                unitsToPlace = unitsToPlace2
+                placements   = placements2
+            else
+                unitsToPlace = unitsToPlace1
+                placements   = placements1
+            end
+
+            -- วางทีละตัวตามตำแหน่ง
+            for _, unit in ipairs(unitsToPlace) do
+                for _, pos in ipairs(placements) do
+                    if stopScript then break end
+                    local RenderUnit = {"Render", {unit.name, unit.id, pos, 0}}
+                    pcall(function()
+                        UnitEvent:FireServer(unpack(RenderUnit))
+                    end)
+                    task.wait(0.5) -- delay ระหว่างตัวละครแต่ละตัว
+                end
+                task.wait(0.5) -- delay หลังวางแต่ละ unit
+            end
+
+            task.wait(2) -- delay หลังวางครบชุด ก่อนวนลูปใหม่
         end
     end
 end
 
 -- =========================
--- วางตัวละคร + Retry
+-- เรียกใช้งาน
 -- =========================
-task.spawn(function()
-    while true do
-        if not stopScript then
-            local ok, err = pcall(placeUnits)
-            if not ok then
-                warn("Retry ระบบวางตัวละครใน 2 วิ: "..tostring(err))
-                task.wait(2)
-            else
-                task.wait(3)
-            end
-        else
-            task.wait(1)
-        end
-    end
-end)
+task.spawn(placeUnitsLoop)
 
 -- =========================
 -- ฟังก์ชันอัปเกรดตัวละคร
@@ -250,4 +243,5 @@ task.spawn(function()
         end
     end
 end)
+
 
