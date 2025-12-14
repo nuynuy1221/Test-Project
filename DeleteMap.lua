@@ -46,4 +46,4 @@ Map.DescendantAdded:Connect(function(obj)
     end
 end)
 
-print("✅ ลบทุกอย่างใน workspace.Map ที่สูงกว่า Y = 40 แล้ว")
+print("✅ ลบทุกอย่างใน workspace.Map ที่สูงกว่า Y = -100 แล้ว")
