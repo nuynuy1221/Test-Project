@@ -101,6 +101,7 @@ local Summons = {
 -- ลูปหลัก
 while true do
     local level = getLevel()
+    local leaves = getLeaves() -- ต้องดึง Leaves ก่อนเช็ค
 
     if level >= 11 then
         if leaves >= 1500 then
