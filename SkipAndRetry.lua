@@ -1,7 +1,6 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
-repeat task.wait() until game:IsLoaded()
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
     warn("PlaceId ไม่ตรง ไม่ Skip และ Retry ให้")
@@ -34,22 +33,19 @@ local function pressSkipButton()
     end
 end
 
+-- ฟังก์ชัน Vote Retry
 local function pressRetryButton()
-    local success, button = pcall(function()
-        return playerGui.EndScreen.Holder.Buttons.Retry.Button
+    local RetryMap = {
+        [1] = "Retry"
+    }
+
+    pcall(function()
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Networking")
+            :WaitForChild("EndScreen")
+            :WaitForChild("VoteEvent")
+            :FireServer(unpack(RetryMap))
     end)
-    
-    if success and button then
-        button.Selectable = true
-        GuiService.SelectedCoreObject = button
-
-        -- กด Enter
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-
-        wait(0.1)
-        GuiService.SelectedCoreObject = nil
-    end
 end
 
 -- เช็คปุ่มทุก 2 วิ
