@@ -9,7 +9,7 @@ if game.PlaceId ~= targetPlace then
 end
 
 local Map = workspace:WaitForChild("Map")
-local HEIGHT_LIMIT = 40
+local HEIGHT_LIMIT = -100
 
 -- เช็คความสูง
 local function isAboveHeight(obj)
