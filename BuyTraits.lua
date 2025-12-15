@@ -1,9 +1,9 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
-local targetPlace = 16146832113
+local targetPlace = 126884695634066
 if game.PlaceId ~= targetPlace then
-    warn("PlaceId ไม่ตรง — ไม่ EquipUnits ให้")
+    warn("PlaceId ไม่ตรง — ไม่ซื้อ Reroll ให้")
     return
 end
 
