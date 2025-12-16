@@ -1,5 +1,5 @@
 repeat task.wait() until game:IsLoaded()
-task.wait(2)
+task.wait(30)
 
 -- =======================
 -- เช็ค PlaceId ก่อนเสมอ
