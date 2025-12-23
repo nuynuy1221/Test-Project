@@ -22,11 +22,12 @@ end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Networking = ReplicatedStorage:WaitForChild("Networking")
 
-local DailyRewardEvent     = Networking:WaitForChild("DailyRewardEvent")
-local MilestonesEvent      = Networking:WaitForChild("Milestones"):WaitForChild("MilestonesEvent")
-local QuestEvent           = Networking:WaitForChild("Quests"):WaitForChild("ClaimQuest")
-local BattlepassEvent      = Networking:WaitForChild("BattlepassEvent")
-local ReturningPlayerEvent = Networking:WaitForChild("ReturningPlayerEvent")
+local DailyRewardEvent      = Networking:WaitForChild("DailyRewardEvent")
+local MilestonesEvent       = Networking:WaitForChild("Milestones"):WaitForChild("MilestonesEvent")
+local QuestEvent            = Networking:WaitForChild("Quests"):WaitForChild("ClaimQuest")
+local BattlepassEvent       = Networking:WaitForChild("BattlepassEvent")
+local ReturningPlayerEvent  = Networking:WaitForChild("ReturningPlayerEvent")
+local NewPlayerRewardsEvent = Networking:WaitForChild("NewPlayerRewardsEvent")
 --============================================--
 
 local DELAY = 0.3
@@ -43,7 +44,7 @@ local function safeFire(remote, args)
     task.wait(DELAY)
 end
 
---================ DAILY REWARD =================--
+--================ DAILY REWARD (NORMAL) =================--
 local dailyRewards = {
     {"Special", 2},
     {"Special", 4},
@@ -55,6 +56,14 @@ for _, reward in ipairs(dailyRewards) do
     safeFire(DailyRewardEvent, {
         "Claim",
         reward
+    })
+end
+
+--================ DAILY REWARD (ANNIVERSARY) =================--
+for day = 1, 7 do
+    safeFire(DailyRewardEvent, {
+        "Claim",
+        {"Anniversary", day}
     })
 end
 
@@ -79,6 +88,14 @@ safeFire(BattlepassEvent, {
 --================ RETURNING PLAYER =================--
 for day = 1, 7 do
     safeFire(ReturningPlayerEvent, {
+        "Claim",
+        day
+    })
+end
+
+--================ NEW PLAYER REWARDS =================--
+for day = 1, 7 do
+    safeFire(NewPlayerRewardsEvent, {
         "Claim",
         day
     })
