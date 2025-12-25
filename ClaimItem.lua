@@ -1,14 +1,19 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
---================ CONFIG =================--
-local Config = getgenv().Config or {}
+--================ CONFIG (REQUIRED) =================--
+local Config = getgenv().Config
 
-if Config.ClaimItem == false then
-    warn("❌ ปิด ClaimItem จาก Config — ข้ามการรับของ")
+if not Config then
+    warn("❌ ไม่มี Config — ไม่รัน ClaimItem")
     return
 end
---========================================--
+
+if Config.ClaimItem ~= true then
+    warn("❌ ClaimItem ไม่ได้เปิดจาก Config — ข้ามการรับของ")
+    return
+end
+--===================================================--
 
 --================ PLACE CHECK =================--
 local TARGET_PLACE = 16146832113
