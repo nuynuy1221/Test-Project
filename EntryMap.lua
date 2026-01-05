@@ -125,23 +125,22 @@ local Summons = { [1]="SummonMany", [2]="Fall", [3]=10 }
 while true do
     local level = getLevel()
     local leaves = getLeaves()
-
-    if level >= 11 then
-        if leaves >= 1500 then
-            SummonEvent:FireServer(unpack(Summons))
-            task.wait(1)
-        else
-            if hasLichKing() then
-                print("⚠️ เจอ Lich King (Ruler) → รอ 5 วินาที")
-                task.wait(5)
-            end
-            GoLich() -- เรียก FallEvent หลังจากรอถ้าเจอ Lich King
-        end
-    else
+ 
+    if level < 11 then
         startMatch()
+    else
+        if hasLichKing() then
+            print("✅ มี Lich King → เริ่มเกม")
+            GoLich() 
+        else
+            if leaves >= 1500 then
+                SummonEvent:FireServer(unpack(Summons))
+                task.wait(1)
+            else
+                print("⏩ Leaves ไม่พอ → เริ่มเกม")
+                GoLich()
+            end
+        end
     end
-
     task.wait(1)
 end
-
-
