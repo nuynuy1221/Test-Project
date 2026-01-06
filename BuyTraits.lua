@@ -35,10 +35,10 @@ local ShopEvent = ReplicatedStorage
 
 local BuyTraits = {
     "Purchase",
-    {"TraitRerolls", 10}
+    {"TraitRerolls", 1}
 }
 
-for i = 1, 6 do
+for i = 1, 45 do
     local success, err = pcall(function()
         ShopEvent:FireServer(unpack(BuyTraits))
     end)
@@ -47,7 +47,7 @@ for i = 1, 6 do
         warn("❌ เกิดปัญหา FireServer:", err)
     end
 
-    task.wait(1) -- กัน server block
+    task.wait(0.1) -- กัน server block
 end
 
 print("✅ BuyTraitReroll: ซื้อ Reroll เสร็จเรียบร้อย")
