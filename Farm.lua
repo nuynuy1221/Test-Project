@@ -4,7 +4,7 @@ task.wait(1.5)
 -- เช็ค PlaceId
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
-    warn("ผิดแมพ! ต้องอยู่ในแมพฟาร์มเท่านั้น")
+    warn("ผิดเกม! สคริปต์นี้ใช้ได้กับ Anime Vanguards เท่านั้น")
     return
 end
 
@@ -59,7 +59,7 @@ local function getOffsetPosition(basePos)
     return basePos + Vector3.new(offsetX, 0, offsetZ)
 end
 
--- Safe FireServer (ไม่มี unpack ใน level นี้)
+-- Safe FireServer
 local function placeUnit(pos)
     local renderTable = { CONFIG.UNIT_NAME, CONFIG.UNIT_ID, pos, 0 }
     local slotTable = { SlotIndex = CONFIG.SLOT_INDEX }
@@ -72,15 +72,15 @@ end
 local function getCurrentStageAct()
     local stageText = ""
     pcall(function()
-        local guides = playerGui.Guides
+        local guides = playerGui:FindFirstChild("Guides")
         if guides then
-            local list = guides.List
+            local list = guides:FindFirstChild("List")
             if list then
-                local stageInfo = list.StageInfo
+                local stageInfo = list:FindFirstChild("StageInfo")
                 if stageInfo then
-                    local stageFrame = stageInfo.StageFrame
+                    local stageFrame = stageInfo:FindFirstChild("StageFrame")
                     if stageFrame then
-                        local stageAct = stageFrame.StageAct
+                        local stageAct = stageFrame:FindFirstChild("StageAct")
                         if stageAct and stageAct.Text then
                             stageText = stageAct.Text
                         end
@@ -92,23 +92,60 @@ local function getCurrentStageAct()
     return stageText
 end
 
--- ระบบหยุด
+-- ฟังก์ชันเช็คว่ามี Lich King ใน inventory หรือไม่
+local function hasLichKing()
+    local hasLich = false
+    
+    pcall(function()
+        local windows = playerGui:FindFirstChild("Windows")
+        if windows then
+            local units = windows:FindFirstChild("Units")
+            if units then
+                local holder = units:FindFirstChild("Holder")
+                if holder then
+                    local main = holder:FindFirstChild("Main")
+                    if main then
+                        local unitsFolder = main:FindFirstChild("Units")
+                        if unitsFolder then
+                            for _, frame in ipairs(unitsFolder:GetChildren()) do
+                                local nameLabel = frame:FindFirstChild("Container", true)
+                                    and frame.Container:FindFirstChild("Holder", true)
+                                    and frame.Container.Holder:FindFirstChild("Main", true)
+                                    and frame.Container.Holder.Main:FindFirstChild("UnitName")
+                                
+                                if nameLabel and nameLabel.Text and nameLabel.Text:find("Lich King") then
+                                    hasLich = true
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    return hasLich
+end
+
+-- ระบบหยุด / วาร์ปกลับ Lobby
 local stopScript = false
 
 task.spawn(function()
     while true do
-        task.wait(1.5)
+        task.wait(2)
         
         local level = player:GetAttribute("Level") or 0
         local leaves = player:GetAttribute("Leaves") or 0
         local stage = getCurrentStageAct()
+        local hasLich = hasLichKing()
         
-        if level >= CONFIG.STOP_LEVEL then
-            if (stage == "Fall — Infinite" and leaves >= CONFIG.STOP_LEAVES) 
-            or (stage ~= "" and stage ~= "Fall — Infinite") then
+        -- ด่านปกติ → ถึงเลเวล 11 ให้วาร์ปกลับทันที
+        if stage ~= "Fall — Infinite" then
+            if level >= CONFIG.STOP_LEVEL then
                 if not stopScript then
                     stopScript = true
-                    warn("หยุดฟาร์มแล้ว → Teleport ใน 4 วินาที")
+                    warn("ด่านปกติ - ถึงเลเวล " .. level .. " → Teleport Lobby ใน 4 วินาที")
                     task.delay(4, function()
                         if TeleportEvent then TeleportEvent:FireServer("Lobby") end
                     end)
@@ -116,13 +153,31 @@ task.spawn(function()
             else
                 stopScript = false
             end
+            
+        -- ด่าน Fall — Infinite
         else
-            stopScript = false
+            if hasLich then
+                -- มี Lich King แล้ว → ฟาร์มต่อไปเรื่อย ๆ ไม่ต้องหยุด ไม่วาร์ป
+                stopScript = false
+            else
+                -- ยังไม่มี Lich King → ฟาร์มจน Leaves ครบ แล้ววาร์ป
+                if leaves >= CONFIG.STOP_LEAVES then
+                    if not stopScript then
+                        stopScript = true
+                        warn("Fall Infinite - Leaves ถึง " .. leaves .. " (ยังไม่มี Lich King) → Teleport Lobby ใน 4 วินาที")
+                        task.delay(4, function()
+                            if TeleportEvent then TeleportEvent:FireServer("Lobby") end
+                        end)
+                    end
+                else
+                    stopScript = false
+                end
+            end
         end
     end
 end)
 
--- วางตัว (แก้ error โดยไม่ใช้ unpack เลย)
+-- วางตัว
 task.spawn(function()
     while true do
         if stopScript then
@@ -138,11 +193,11 @@ task.spawn(function()
         local basePos = positions[index]
         local pos = getOffsetPosition(basePos)
         
-        placeUnit(pos)  -- เรียกฟังก์ชัน safe ที่ไม่มี error
+        placeUnit(pos)
         
         task.wait(CONFIG.PLACE_DELAY)
         
-        -- สลับ index
+        -- สลับจุด
         if stage == "Fall — Infinite" then
             fallIndex = (fallIndex % #CONFIG.FALL_POSITIONS) + 1
         else
