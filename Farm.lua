@@ -1,169 +1,178 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(1.5)
 
+-- เช็ค PlaceId
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
-    warn("ผิดแมพ! ใช้ได้ในห้องฟาร์มเท่านั้น")
+    warn("ผิดแมพ! ต้องอยู่ในแมพฟาร์มเท่านั้น")
     return
 end
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
-local Networking = RS:WaitForChild("Networking", 8)
-local UnitEvent = Networking and Networking:WaitForChild("UnitEvent", 5)
-local TeleportEvent = Networking and Networking:WaitForChild("TeleportEvent", 5)
+local Networking = RS:WaitForChild("Networking", 10)
+local UnitEvent = Networking:WaitForChild("UnitEvent", 8)
+local TeleportEvent = Networking:WaitForChild("TeleportEvent", 8)
+local playerGui = player:WaitForChild("PlayerGui", 10)
 
 if not UnitEvent then
     warn("ไม่เจอ UnitEvent → เกมอาจอัปเดตแล้ว")
     return
 end
 
--- ==============================================
--- SETTINGS
--- ==============================================
-local SETTINGS = {
-    UNITS_TO_PLACE = {
-        {name = "Ackers", id = 241},
+-- =========================
+-- Settings
+-- =========================
+local CONFIG = {
+    UNIT_NAME = "Ackers",
+    UNIT_ID = 241,
+    
+    STOP_LEVEL = 11,
+    STOP_LEAVES = 45000,
+    
+    NORMAL_POSITIONS = {
+        Vector3.new(445.17132568359375, 2.29998779296875, -342.4508056640625),
+        Vector3.new(445.14013671875, 2.29998779296875, -346.05340576171875),
+        Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
     },
-
-    PLACEMENT_POSITIONS = {
+    
+    FALL_POSITIONS = {
         Vector3.new(354.797, 48.49, -166.937),
         Vector3.new(353.004, 48.49, -166.919),
         Vector3.new(351.165, 48.49, -166.960)
     },
-
-    DELAY_BETWEEN_PLACEMENT = 1,
-    DELAY_BETWEEN_CYCLE    = 3,
-    AUTO_UPGRADE           = true,
-    UPGRADE_DELAY          = 2,
-    STOP_LEAVES            = 45000,
-    STOP_LEVEL             = 11,
+    
+    PLACE_DELAY = 0.42,
+    CYCLE_DELAY = 1.6,
+    UPGRADE_DELAY = 0.65,
+    SLOT_INDEX = 1
 }
 
--- ==============================================
--- Helper Functions
--- ==============================================
-local function safeFire(...)
-    pcall(UnitEvent.FireServer, UnitEvent, ...)
+-- สลับจุดแยกแมพ
+local normalIndex = 1
+local fallIndex = 1
+
+local function getOffsetPosition(basePos)
+    local offsetX = math.random(-10, 10) / 10
+    local offsetZ = math.random(-10, 10) / 10
+    return basePos + Vector3.new(offsetX, 0, offsetZ)
 end
 
-local function getCurrentLeaves()
-    return player:GetAttribute("Leaves") 
-        or player:GetAttribute("leaves") 
-        or player:GetAttribute("Leaf") 
-        or 0
-end
-
-local function getLevel()
-    return player:GetAttribute("Level") 
-        or player:GetAttribute("PlayerLevel") 
-        or 0
-end
-
--- ==============================================
--- ระบบหยุดสคริปต์
--- ==============================================
-local STOP_SCRIPT = false
-
-task.spawn(function()
-    while true do
-        task.wait(2)
-
-        local level = getLevel()
-        local leaves = getCurrentLeaves()
-        local hasLich = false
-
-        -- เช็ค Lich King (path แบบปลอดภัย)
-        pcall(function()
-            local pg = player.PlayerGui
-            local w = pg.Windows
-            local u = w.Units
-            local h = u.Holder
-            local m = h.Main
-            local uf = m.Units
-
-            for _, frame in uf:GetChildren() do
-                local nameLabel = frame.Container
-                    and frame.Container.Holder
-                    and frame.Container.Holder.Main
-                    and frame.Container.Holder.Main.UnitName
-
-                if nameLabel and nameLabel.Text and nameLabel.Text:find("Lich King") then
-                    hasLich = true
-                    break
-                end
-            end
-        end)
-
-        if level >= SETTINGS.STOP_LEVEL and (hasLich or leaves >= SETTINGS.STOP_LEAVES) then
-            if not STOP_SCRIPT then
-                STOP_SCRIPT = true
-                warn(string.format("หยุดแล้ว (Lv.%d | Leaves: %d)", level, leaves))
-                task.delay(5, function()
-                    if TeleportEvent then
-                        TeleportEvent:FireServer("Lobby")
-                    end
-                end)
-            end
-        else
-            STOP_SCRIPT = false
-        end
-    end
-end)
-
--- ==============================================
--- วางตัว (แก้ error unpack โดยไม่ใช้ unpack เลย)
--- ==============================================
-task.spawn(function()
-    while true do
-        task.wait(STOP_SCRIPT and 3 or SETTINGS.DELAY_BETWEEN_CYCLE)
-
-        if STOP_SCRIPT then continue end
-
-        for _, unit in SETTINGS.UNITS_TO_PLACE do
-            for _, pos in SETTINGS.PLACEMENT_POSITIONS do
-                if STOP_SCRIPT then break end
-
-                -- รูปแบบที่ 1 (รูปแบบใหม่ที่คุณให้มา - แนะนำให้ใช้หลัก)
-                safeFire(
-                    "Render",
-                    {unit.name, unit.id, pos, 0},
-                    {SlotIndex = 1}
-                )
-
-                -- รูปแบบที่ 2 (fallback แบบเก่า ถ้าอันบนไม่เวิร์ค)
-                task.wait(0.08)
-                safeFire("Render", unit.name, unit.id, pos, 0)
-
-                task.wait(SETTINGS.DELAY_BETWEEN_PLACEMENT)
-            end
-        end
-    end
-end)
-
--- ==============================================
--- Auto Upgrade
--- ==============================================
-if SETTINGS.AUTO_UPGRADE then
-    task.spawn(function()
-        while true do
-            if not STOP_SCRIPT then
-                pcall(function()
-                    local units = workspace:FindFirstChild("Units")
-                    if units then
-                        for _, unit in units:GetChildren() do
-                            if unit:IsA("Model") then
-                                safeFire("Upgrade", unit.Name)
-                                task.wait(SETTINGS.UPGRADE_DELAY)
-                            end
-                        end
-                    end
-                end)
-            end
-            task.wait(1.3)
-        end
+-- Safe FireServer (ไม่มี unpack ใน level นี้)
+local function placeUnit(pos)
+    local renderTable = { CONFIG.UNIT_NAME, CONFIG.UNIT_ID, pos, 0 }
+    local slotTable = { SlotIndex = CONFIG.SLOT_INDEX }
+    
+    pcall(function()
+        UnitEvent:FireServer("Render", renderTable, slotTable)
     end)
 end
 
-print("สคริปต์ Anime Vanguards Auto Farm รันเสร็จแล้ว")
+local function getCurrentStageAct()
+    local stageText = ""
+    pcall(function()
+        local guides = playerGui.Guides
+        if guides then
+            local list = guides.List
+            if list then
+                local stageInfo = list.StageInfo
+                if stageInfo then
+                    local stageFrame = stageInfo.StageFrame
+                    if stageFrame then
+                        local stageAct = stageFrame.StageAct
+                        if stageAct and stageAct.Text then
+                            stageText = stageAct.Text
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    return stageText
+end
+
+-- ระบบหยุด
+local stopScript = false
+
+task.spawn(function()
+    while true do
+        task.wait(1.5)
+        
+        local level = player:GetAttribute("Level") or 0
+        local leaves = player:GetAttribute("Leaves") or 0
+        local stage = getCurrentStageAct()
+        
+        if level >= CONFIG.STOP_LEVEL then
+            if (stage == "Fall — Infinite" and leaves >= CONFIG.STOP_LEAVES) 
+            or (stage ~= "" and stage ~= "Fall — Infinite") then
+                if not stopScript then
+                    stopScript = true
+                    warn("หยุดฟาร์มแล้ว → Teleport ใน 4 วินาที")
+                    task.delay(4, function()
+                        if TeleportEvent then TeleportEvent:FireServer("Lobby") end
+                    end)
+                end
+            else
+                stopScript = false
+            end
+        else
+            stopScript = false
+        end
+    end
+end)
+
+-- วางตัว (แก้ error โดยไม่ใช้ unpack เลย)
+task.spawn(function()
+    while true do
+        if stopScript then
+            task.wait(3)
+            continue
+        end
+        
+        local stage = getCurrentStageAct()
+        local positions = (stage == "Fall — Infinite") and CONFIG.FALL_POSITIONS or CONFIG.NORMAL_POSITIONS
+        
+        local index = (stage == "Fall — Infinite") and fallIndex or normalIndex
+        
+        local basePos = positions[index]
+        local pos = getOffsetPosition(basePos)
+        
+        placeUnit(pos)  -- เรียกฟังก์ชัน safe ที่ไม่มี error
+        
+        task.wait(CONFIG.PLACE_DELAY)
+        
+        -- สลับ index
+        if stage == "Fall — Infinite" then
+            fallIndex = (fallIndex % #CONFIG.FALL_POSITIONS) + 1
+        else
+            normalIndex = (normalIndex % #CONFIG.NORMAL_POSITIONS) + 1
+        end
+        
+        task.wait(CONFIG.CYCLE_DELAY)
+    end
+end)
+
+-- Auto Upgrade
+task.spawn(function()
+    while true do
+        if not stopScript then
+            pcall(function()
+                local units = workspace:FindFirstChild("Units")
+                if units then
+                    for _, unit in ipairs(units:GetChildren()) do
+                        if unit:IsA("Model") then
+                            pcall(function()
+                                UnitEvent:FireServer("Upgrade", unit.Name)
+                            end)
+                            task.wait(CONFIG.UPGRADE_DELAY)
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(1.3)
+    end
+end)
+
+print("✅ Auto Farm Script")
