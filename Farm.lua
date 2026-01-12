@@ -1,195 +1,169 @@
 repeat task.wait() until game:IsLoaded()
-task.wait(1)
+task.wait(1.5)
 
---== เช็ค PlaceId ก่อนรัน ==--
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
-    warn("PlaceId ไม่ตรง สคริปต์จะไม่ทำงาน")
+    warn("ผิดแมพ! ใช้ได้ในห้องฟาร์มเท่านั้น")
     return
 end
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Networking = ReplicatedStorage:WaitForChild("Networking")
-local UnitEvent = Networking:WaitForChild("UnitEvent")
-local TeleportEvent = Networking:WaitForChild("TeleportEvent")
-local playerGui = player:WaitForChild("PlayerGui")
+local RS = game:GetService("ReplicatedStorage")
+local Networking = RS:WaitForChild("Networking", 8)
+local UnitEvent = Networking and Networking:WaitForChild("UnitEvent", 5)
+local TeleportEvent = Networking and Networking:WaitForChild("TeleportEvent", 5)
 
--- =========================
--- แปลง string เป็น number
--- =========================
-local function toNumber(str)
-    if not str then return 0 end
-    str = tostring(str):gsub("[^%d.]", "")
-    local firstDot = str:find("%.")
-    if firstDot then
-        str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
-    end
-    return tonumber(str) or 0
+if not UnitEvent then
+    warn("ไม่เจอ UnitEvent → เกมอาจอัปเดตแล้ว")
+    return
 end
 
--- =========================
--- ฟังก์ชันเช็ค Level / Leaves
--- =========================
+-- ==============================================
+-- SETTINGS
+-- ==============================================
+local SETTINGS = {
+    UNITS_TO_PLACE = {
+        {name = "Ackers", id = 241},
+    },
+
+    PLACEMENT_POSITIONS = {
+        Vector3.new(354.797, 48.49, -166.937),
+        Vector3.new(353.004, 48.49, -166.919),
+        Vector3.new(351.165, 48.49, -166.960)
+    },
+
+    DELAY_BETWEEN_PLACEMENT = 1,
+    DELAY_BETWEEN_CYCLE    = 3,
+    AUTO_UPGRADE           = true,
+    UPGRADE_DELAY          = 2,
+    STOP_LEAVES            = 45000,
+    STOP_LEVEL             = 11,
+}
+
+-- ==============================================
+-- Helper Functions
+-- ==============================================
+local function safeFire(...)
+    pcall(UnitEvent.FireServer, UnitEvent, ...)
+end
+
+local function getCurrentLeaves()
+    return player:GetAttribute("Leaves") 
+        or player:GetAttribute("leaves") 
+        or player:GetAttribute("Leaf") 
+        or 0
+end
+
 local function getLevel()
-    for _, attrName in ipairs({"Level","level","PlayerLevel","Player_Level"}) do
-        local v = player:GetAttribute(attrName)
-        if v ~= nil then return tonumber(v) or toNumber(v) end
-    end
-    return 0
+    return player:GetAttribute("Level") 
+        or player:GetAttribute("PlayerLevel") 
+        or 0
 end
 
-local function getLeaves()
-    for _, attrName in ipairs({"Leaves","leaves","Leaf","leaf","LeavesAmount","LeavesEarned"}) do
-        local v = player:GetAttribute(attrName)
-        if v ~= nil then return tonumber(v) or toNumber(v) end
-    end
-    return 0
-end
+-- ==============================================
+-- ระบบหยุดสคริปต์
+-- ==============================================
+local STOP_SCRIPT = false
 
--- =========================
--- Teleport Lobby
--- =========================
-local function teleportToLobby()
-    pcall(function()
-        TeleportEvent:FireServer("Lobby")
-        warn("🔥 เลเวลถึง 11 — Teleport กลับ Lobby แล้ว!")
+task.spawn(function()
+    while true do
+        task.wait(2)
+
+        local level = getLevel()
+        local leaves = getCurrentLeaves()
+        local hasLich = false
+
+        -- เช็ค Lich King (path แบบปลอดภัย)
+        pcall(function()
+            local pg = player.PlayerGui
+            local w = pg.Windows
+            local u = w.Units
+            local h = u.Holder
+            local m = h.Main
+            local uf = m.Units
+
+            for _, frame in uf:GetChildren() do
+                local nameLabel = frame.Container
+                    and frame.Container.Holder
+                    and frame.Container.Holder.Main
+                    and frame.Container.Holder.Main.UnitName
+
+                if nameLabel and nameLabel.Text and nameLabel.Text:find("Lich King") then
+                    hasLich = true
+                    break
+                end
+            end
+        end)
+
+        if level >= SETTINGS.STOP_LEVEL and (hasLich or leaves >= SETTINGS.STOP_LEAVES) then
+            if not STOP_SCRIPT then
+                STOP_SCRIPT = true
+                warn(string.format("หยุดแล้ว (Lv.%d | Leaves: %d)", level, leaves))
+                task.delay(5, function()
+                    if TeleportEvent then
+                        TeleportEvent:FireServer("Lobby")
+                    end
+                end)
+            end
+        else
+            STOP_SCRIPT = false
+        end
+    end
+end)
+
+-- ==============================================
+-- วางตัว (แก้ error unpack โดยไม่ใช้ unpack เลย)
+-- ==============================================
+task.spawn(function()
+    while true do
+        task.wait(STOP_SCRIPT and 3 or SETTINGS.DELAY_BETWEEN_CYCLE)
+
+        if STOP_SCRIPT then continue end
+
+        for _, unit in SETTINGS.UNITS_TO_PLACE do
+            for _, pos in SETTINGS.PLACEMENT_POSITIONS do
+                if STOP_SCRIPT then break end
+
+                -- รูปแบบที่ 1 (รูปแบบใหม่ที่คุณให้มา - แนะนำให้ใช้หลัก)
+                safeFire(
+                    "Render",
+                    {unit.name, unit.id, pos, 0},
+                    {SlotIndex = 1}
+                )
+
+                -- รูปแบบที่ 2 (fallback แบบเก่า ถ้าอันบนไม่เวิร์ค)
+                task.wait(0.08)
+                safeFire("Render", unit.name, unit.id, pos, 0)
+
+                task.wait(SETTINGS.DELAY_BETWEEN_PLACEMENT)
+            end
+        end
+    end
+end)
+
+-- ==============================================
+-- Auto Upgrade
+-- ==============================================
+if SETTINGS.AUTO_UPGRADE then
+    task.spawn(function()
+        while true do
+            if not STOP_SCRIPT then
+                pcall(function()
+                    local units = workspace:FindFirstChild("Units")
+                    if units then
+                        for _, unit in units:GetChildren() do
+                            if unit:IsA("Model") then
+                                safeFire("Upgrade", unit.Name)
+                                task.wait(SETTINGS.UPGRADE_DELAY)
+                            end
+                        end
+                    end
+                end)
+            end
+            task.wait(1.3)
+        end
     end)
 end
 
--- =========================
--- สถานะหยุดสคริปต์
--- =========================
-local stopScript = false
-
--- =========================
--- เช็ค Level + StageAct + Leaves
--- =========================
-task.spawn(function()
-    while true do
-        task.wait(1)
-        local lv = getLevel()
-        local leaves = getLeaves()
-
-        local stageActText
-        repeat
-            local ok, stageAct = pcall(function()
-                return playerGui.Guides.List.StageInfo.StageFrame:WaitForChild("StageAct",3)
-            end)
-            if ok and stageAct and stageAct.Text then
-                stageActText = stageAct.Text
-            else
-                task.wait(0.5)
-            end
-        until stageActText
-
-        if lv >= 11 then
-            if stageActText == "Fall — Infinite" and leaves >= 45000 then
-                stopScript = true
-                teleportToLobby()
-            elseif stageActText ~= "Fall — Infinite" then
-                stopScript = true
-                teleportToLobby()
-            end
-        else
-            stopScript = false
-        end
-    end
-end)
-
--- =========================
--- ตัวละครที่จะวาง
--- =========================
-local unitsToPlace1 = {
-    {name = "Luffo", id = 39},
-    {name = "Roku",  id = 41}
-}
-
-local unitsToPlace2 = {
-    {name = "Ackers", id = 241}
-}
-
-local placements1 = {
-    Vector3.new(445.17132568359375, 2.29998779296875, -342.4508056640625),
-    Vector3.new(445.14013671875, 2.29998779296875, -346.05340576171875),
-    Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
-
-}
-
-local placements2 = {
-    Vector3.new(354.797, 48.49, -166.937),
-    Vector3.new(353.004, 48.49, -166.919),
-    Vector3.new(351.165, 48.49, -166.960)
-}
-
--- =========================
--- ฟังก์ชันวางตัวละคร
--- =========================
-local function placeUnitsLoop()
-    while true do
-        if stopScript then
-            task.wait(1)
-        else
-            local stageActText
-            local ok, stageAct = pcall(function()
-                return playerGui.Guides.List.StageInfo.StageFrame.StageAct
-            end)
-            if ok and stageAct and stageAct.Text then
-                stageActText = stageAct.Text
-            end
-
-            local unitsToPlace, placements
-            if stageActText == "Fall — Infinite" then
-                unitsToPlace = unitsToPlace2
-                placements   = placements2
-            else
-                unitsToPlace = unitsToPlace2
-                placements   = placements1
-            end
-
-            for _, unit in ipairs(unitsToPlace) do
-                for _, pos in ipairs(placements) do
-                    if stopScript then break end
-                    pcall(function()
-                        UnitEvent:FireServer("Render", {unit.name, unit.id, pos, 0})
-                    end)
-                    task.wait(0.5)
-                end
-                task.wait(0.5)
-            end
-
-            task.wait(2)
-        end
-    end
-end
-
-task.spawn(placeUnitsLoop)
-
--- =========================
--- ฟังก์ชันอัปเกรดตัวละคร
--- =========================
-local function upgradeUnits()
-    local unitsFolder = workspace:WaitForChild("Units")
-    for _, unitInstance in ipairs(unitsFolder:GetChildren()) do
-        pcall(function()
-            UnitEvent:FireServer("Upgrade", unitInstance.Name)
-        end)
-        task.wait(0.5)
-    end
-end
-
--- =========================
--- ระบบอัปเกรดต่อเนื่อง
--- =========================
-task.spawn(function()
-    while true do
-        if not stopScript then
-            pcall(upgradeUnits)
-        end
-        task.wait(1)
-    end
-end)
-
-
-
+print("สคริปต์ Anime Vanguards Auto Farm รันเสร็จแล้ว")
