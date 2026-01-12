@@ -4,7 +4,7 @@ task.wait(1.5)
 -- เช็ค PlaceId
 local targetPlace = 16277809958
 if game.PlaceId ~= targetPlace then
-    warn("ผิดเกม! สคริปต์นี้ใช้ได้กับ Anime Vanguards เท่านั้น")
+    warn("ผิดแมพ! ต้องอยู่ในแมพฟาร์มเท่านั้น")
     return
 end
 
@@ -231,3 +231,4 @@ task.spawn(function()
 end)
 
 print("✅ Auto Farm Script")
+
