@@ -122,7 +122,7 @@ RunService.RenderStepped:Connect(function()
     levelLabel.Text  = "⬆️ Level : "..getLevel()
     presents26Label.Text = "🎁 Presents : "..getPresents26()
 
-    local has = checkLichFromUnits()
+    local has = checkIceQueenFromUnits()
     player:SetAttribute("HasIceQueen", hasQueen)
 
     icequeenLabel.Text = "👑 Ice Queen : "..(hasQueen and "✅" or "❌")
