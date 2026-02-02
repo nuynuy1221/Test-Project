@@ -94,7 +94,7 @@ local function getUnitsContainer()
     return ok and container or nil
 end
 
-local function checkLichFromUnits()
+local function checkIceQueenFromUnits()
     local units = getUnitsContainer()
     if not units then return false end
 
@@ -122,8 +122,8 @@ RunService.RenderStepped:Connect(function()
     levelLabel.Text  = "⬆️ Level : "..getLevel()
     presents26Label.Text = "🎁 Presents : "..getPresents26()
 
-    local hasLich = checkLichFromUnits()
-    player:SetAttribute("HasLichKing", hasLich)
+    local has = checkLichFromUnits()
+    player:SetAttribute("HasIceQueen", hasQueen)
 
     icequeenLabel.Text = "👑 Ice Queen : "..(hasQueen and "✅" or "❌")
 end)
