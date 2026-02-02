@@ -29,7 +29,7 @@ local CONFIG = {
     UNIT_ID = 241,
     
     STOP_LEVEL = 11,
-    STOP_LEAVES = 45000,
+    STOP_PRESENTS26 = 45000,
     
     NORMAL_POSITIONS = {
         Vector3.new(445.17132568359375, 2.29998779296875, -342.4508056640625),
@@ -37,10 +37,10 @@ local CONFIG = {
         Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
     },
     
-    FALL_POSITIONS = {
-        Vector3.new(354.797, 48.49, -166.937),
-        Vector3.new(353.004, 48.49, -166.919),
-        Vector3.new(351.165, 48.49, -166.960)
+    WINTER_POSITIONS = {
+        Vector3.new(-277.788330078125, 251.36184692382812, 97.78836059570312),
+        Vector3.new(-275.8544921875, 251.36184692382812, 97.96082305908203),
+        Vector3.new(-273.71441650390625, 251.36184692382812, 97.8721694946289)
     },
     
     PLACE_DELAY = 0.42,
@@ -51,7 +51,7 @@ local CONFIG = {
 
 -- สลับจุดแยกแมพ
 local normalIndex = 1
-local fallIndex = 1
+local winterIndex = 1
 
 local function getOffsetPosition(basePos)
     local offsetX = math.random(-10, 10) / 10
@@ -92,9 +92,9 @@ local function getCurrentStageAct()
     return stageText
 end
 
--- ฟังก์ชันเช็คว่ามี Lich King ใน inventory หรือไม่
-local function hasLichKing()
-    local hasLich = false
+-- ฟังก์ชันเช็คว่ามี Ice Queen (Release) ใน inventory หรือไม่
+local function hasIceQueen()
+    local hasQueen = false
     
     pcall(function()
         local windows = playerGui:FindFirstChild("Windows")
@@ -113,8 +113,8 @@ local function hasLichKing()
                                     and frame.Container.Holder:FindFirstChild("Main", true)
                                     and frame.Container.Holder.Main:FindFirstChild("UnitName")
                                 
-                                if nameLabel and nameLabel.Text and nameLabel.Text:find("Lich King") then
-                                    hasLich = true
+                                if nameLabel and nameLabel.Text and nameLabel.Text:find("Ice Queen (Release)") then
+                                    hasQueen = true
                                     break
                                 end
                             end
@@ -125,7 +125,7 @@ local function hasLichKing()
         end
     end)
     
-    return hasLich
+    return hasQueen
 end
 
 -- ระบบหยุด / วาร์ปกลับ Lobby
@@ -136,12 +136,12 @@ task.spawn(function()
         task.wait(2)
         
         local level = player:GetAttribute("Level") or 0
-        local leaves = player:GetAttribute("Leaves") or 0
+        local Presents26 = player:GetAttribute("Presents26") or 0
         local stage = getCurrentStageAct()
-        local hasLich = hasLichKing()
+        local hasQueen = hasIceQueen()
         
         -- ด่านปกติ → ถึงเลเวล 11 ให้วาร์ปกลับทันที
-        if stage ~= "Fall — Infinite" then
+        if stage ~= "Winter — Infinite" then
             if level >= CONFIG.STOP_LEVEL then
                 if not stopScript then
                     stopScript = true
@@ -154,17 +154,17 @@ task.spawn(function()
                 stopScript = false
             end
             
-        -- ด่าน Fall — Infinite
+        -- ด่าน Winter — Infinite
         else
-            if hasLich then
-                -- มี Lich King แล้ว → ฟาร์มต่อไปเรื่อย ๆ ไม่ต้องหยุด ไม่วาร์ป
+            if hasQueen then
+                -- มี Ice Queen (Release) แล้ว → ฟาร์มต่อไปเรื่อย ๆ ไม่ต้องหยุด ไม่วาร์ป
                 stopScript = false
             else
-                -- ยังไม่มี Lich King → ฟาร์มจน Leaves ครบ แล้ววาร์ป
-                if leaves >= CONFIG.STOP_LEAVES then
+                -- ยังไม่มี Ice Queen (Release) → ฟาร์มจน Presents26 ครบ แล้ววาร์ป
+                if Presents26 >= CONFIG.STOP_PRESENTS26 then
                     if not stopScript then
                         stopScript = true
-                        warn("Fall Infinite - Leaves ถึง " .. leaves .. " (ยังไม่มี Lich King) → Teleport Lobby ใน 4 วินาที")
+                        warn("Winter Infinite - Presents26 ถึง " .. Presents26 .. " (ยังไม่มี Ice Queen (Release)) → Teleport Lobby ใน 4 วินาที")
                         task.delay(4, function()
                             if TeleportEvent then TeleportEvent:FireServer("Lobby") end
                         end)
@@ -186,9 +186,9 @@ task.spawn(function()
         end
         
         local stage = getCurrentStageAct()
-        local positions = (stage == "Fall — Infinite") and CONFIG.FALL_POSITIONS or CONFIG.NORMAL_POSITIONS
+        local positions = (stage == "Winter — Infinite") and CONFIG.WINTER_POSITIONS or CONFIG.NORMAL_POSITIONS
         
-        local index = (stage == "Fall — Infinite") and fallIndex or normalIndex
+        local index = (stage == "Winter — Infinite") and winterIndex or normalIndex
         
         local basePos = positions[index]
         local pos = getOffsetPosition(basePos)
@@ -198,8 +198,8 @@ task.spawn(function()
         task.wait(CONFIG.PLACE_DELAY)
         
         -- สลับจุด
-        if stage == "Fall — Infinite" then
-            fallIndex = (fallIndex % #CONFIG.FALL_POSITIONS) + 1
+        if stage == "Winter — Infinite" then
+            winterIndex = (winterIndex % #CONFIG.WINTER_POSITIONS) + 1
         else
             normalIndex = (normalIndex % #CONFIG.NORMAL_POSITIONS) + 1
         end
@@ -231,4 +231,3 @@ task.spawn(function()
 end)
 
 print("✅ Auto Farm Script")
-
