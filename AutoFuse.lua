@@ -14,34 +14,48 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local FuseEvent = ReplicatedStorage:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("FuseEvent")
 local SummonEvent = ReplicatedStorage:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
 
--- ชื่อตัวละครหลักที่จะอัปเลเวล
-local targetName = "Ackers"
+-- ชื่อตัวละครหลักที่จะอัปเลเวล (เพิ่มได้หลายตัว)
+local targetNames = {"Ackers", "Bounty Hunter"}  -- เพิ่มชื่ออื่น ๆ ที่ต้องการอัพ
 
 -- =========================
--- ฟังก์ชันดึงตัวหลักโดยหา GUID จากชื่อ
+-- ฟังก์ชันดึง CacheContainer
 -- =========================
-local function getMainUnit()
-    local ok, cacheContainer = pcall(function()
-        local windows = playerGui:FindFirstChild("Windows")
-        local globalInventory = windows and windows:FindFirstChild("GlobalInventory")
-        local holder = globalInventory and globalInventory:FindFirstChild("Holder")
-        local leftContainer = holder and holder:FindFirstChild("LeftContainer")
-        local fakeScroll = leftContainer and leftContainer:FindFirstChild("FakeScrollingFrame")
-        local items = fakeScroll and fakeScroll:FindFirstChild("Items")
-        local cache = items and items:FindFirstChild("CacheContainer")
-        return cache and cache:GetChildren() or {}
+local function getCacheContainer()
+    local ok, cache = pcall(function()
+        local windows = playerGui:WaitForChild("Windows", 10)
+        local globalInventory = windows:WaitForChild("GlobalInventory", 10)
+        local holder = globalInventory.Holder
+        local leftContainer = holder.LeftContainer
+        local fakeScroll = leftContainer.FakeScrollingFrame
+        local items = fakeScroll.Items
+        local cache = items.CacheContainer
+        return cache
     end)
-    if not ok or not cacheContainer then return nil end
+    return ok and cache or nil
+end
 
-    for _, item in ipairs(cacheContainer) do
-        local ok2, unitNameObj = pcall(function()
-            return item.Container.Holder.Main.UnitName
-        end)
-        if ok2 and unitNameObj and unitNameObj.Text == targetName then
-            return item
+-- =========================
+-- ฟังก์ชันดึงตัวหลักโดยหา GUID จากชื่อ (รองรับหลายตัว)
+-- =========================
+local function getMainUnits()
+    local cache = getCacheContainer()
+    if not cache then return {} end
+    
+    local mainUnits = {}
+    
+    for _, name in ipairs(targetNames) do
+        for _, item in ipairs(cache:GetChildren()) do
+            local ok, unitNameObj = pcall(function()
+                return item:FindFirstChild("Container") and item.Container:FindFirstChild("Holder") and item.Container.Holder:FindFirstChild("Main") and item.Container.Holder.Main:FindFirstChild("UnitName")
+            end)
+            if ok and unitNameObj and unitNameObj.Text and unitNameObj.Text:find(name) then
+                table.insert(mainUnits, {Item = item, Name = name})
+                break  -- หาเจอตัวนี้แล้ว ข้ามไปตัวถัดไป
+            end
         end
     end
-    return nil
+    
+    return mainUnits
 end
 
 -- =========================
@@ -63,27 +77,18 @@ end
 -- =========================
 local function getUnitsByRank(rank)
     local units = {}
-    local ok, cacheContainer = pcall(function()
-        local windows = playerGui:FindFirstChild("Windows")
-        local globalInventory = windows and windows:FindFirstChild("GlobalInventory")
-        local holder = globalInventory and globalInventory:FindFirstChild("Holder")
-        local leftContainer = holder and holder:FindFirstChild("LeftContainer")
-        local fakeScroll = leftContainer and leftContainer:FindFirstChild("FakeScrollingFrame")
-        local items = fakeScroll and fakeScroll:FindFirstChild("Items")
-        local cache = items and items:FindFirstChild("CacheContainer")
-        return cache and cache:GetChildren() or {}
-    end)
-    if not ok or not cacheContainer then return units end
+    local cache = getCacheContainer()
+    if not cache then return units end
 
-    for _, item in ipairs(cacheContainer) do
-        local ok2, glow = pcall(function()
+    for _, item in ipairs(cache:GetChildren()) do
+        local ok, glowRank = pcall(function()
             return item.Container:FindFirstChild("Glow") and item.Container.Glow:FindFirstChild(rank)
         end)
-        if ok2 and glow then
-            local ok3, unitNameObj = pcall(function()
+        if ok and glowRank then
+            local ok2, unitNameObj = pcall(function()
                 return item.Container.Holder.Main.UnitName
             end)
-            if ok3 and unitNameObj then
+            if ok2 and unitNameObj then
                 table.insert(units, {Item = item, Name = item.Name, UnitName = unitNameObj.Text})
             end
         end
@@ -105,9 +110,9 @@ local function summonSpecial()
 end
 
 -- =========================
--- ฟังก์ชัน Fuse ตัวละคร
+-- ฟังก์ชัน Fuse ตัวละคร (สำหรับตัวหลักแต่ละตัว)
 -- =========================
-local function fuseUnits(mainUnit)
+local function fuseUnits(mainUnitItem, targetName)
     for _, rank in ipairs({"Rare","Epic","Legendary"}) do
         local units = getUnitsByRank(rank)
         local subUnits = {}
@@ -122,11 +127,11 @@ local function fuseUnits(mainUnit)
             table.insert(subToUse, subUnits[i])
         end
 
-        if mainUnit and #subToUse > 0 then
+        if mainUnitItem and #subToUse > 0 then
             local args = {
                 [1] = "Fuse",
                 [2] = {
-                    [1] = mainUnit.Name,
+                    [1] = mainUnitItem.Name,
                     [2] = subToUse
                 }
             }
@@ -141,16 +146,29 @@ end
 -- =========================
 task.spawn(function()
     while true do
-        local mainUnit = getMainUnit()
-        if mainUnit then
-            local level = getUnitLevel(mainUnit)
+        local mainUnits = getMainUnits()
+        if #mainUnits == 0 then
+            print("ไม่พบตัวหลักใด ๆ ใน Inventory")
+            task.wait(1)
+            continue
+        end
+        
+        local allAbove30 = true
+        
+        for _, main in ipairs(mainUnits) do
+            local level = getUnitLevel(main.Item)
             if level < 30 then
+                allAbove30 = false
                 summonSpecial()
-                fuseUnits(mainUnit)
-            else
-                break
+                fuseUnits(main.Item, main.Name)
             end
         end
+        
+        if allAbove30 then
+            print("ตัวหลักทั้งหมดถึง Level 30 แล้ว — หยุด Fuse")
+            break
+        end
+        
         task.wait(1)
     end
 end)
