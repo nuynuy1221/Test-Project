@@ -64,66 +64,95 @@ end
 local function getAttr(list)
     for _, name in ipairs(list) do
         local v = player:GetAttribute(name)
-        if v ~= nil then return tonumber(v) end
+        if v ~= nil then return tonumber(v) or 0 end
     end
     return 0
 end
 
 local function getLevel()
-    return getAttr({"level"})
+    return getAttr({"Level", "level", "PlayerLevel", "currentLevel"})
 end
 
 local function getPresents26()
-    return getAttr({"Presents26"})
+    return getAttr({"Presents26", "presents26"})
 end
 
 -- =========================
--- 🔍 เช็ค Lich จาก Units GUI (ไม่สน GUID)
+-- เช็ค Ice Queen แยกตาม PlaceId (ไม่สน GUID)
 -- =========================
-local TARGET = "Ice Queen (Release)"
+local TARGET = "Ice Queen"  -- ชื่อตัวละครที่ต้องการเช็ค
 
-local function getUnitsContainer()
-    local ok, container = pcall(function()
-        return playerGui
-            .Windows
-            .Units
-            .Holder
-            .Main
-            .Units
-    end)
-    return ok and container or nil
-end
-
-local function checkIceQueenFromUnits()
-    local units = getUnitsContainer()
-    if not units then return false end
-
-    for _, unitItem in ipairs(units:GetChildren()) do
-        local ok, nameLabel = pcall(function()
-            return unitItem.Container.Holder.Main.UnitName
+local function checkIceQueen()
+    local currentPlace = game.PlaceId
+    
+    if currentPlace == 16277809958 then
+        -- แมพ 16277809958 → เช็คจาก Units tab
+        local success, units = pcall(function()
+            return playerGui
+                :WaitForChild("Windows", 5)
+                :WaitForChild("Units", 5)
+                .Holder.Main.Units
         end)
-
-        if ok and nameLabel and nameLabel.Text then
-            if nameLabel.Text:lower():find(TARGET) then
-                -- 🔑 เจอ Lich + GUID
-                -- print("FOUND ICE QUEEN | GUID =", unitItem.Name)
-                return true
+        
+        if not success or not units then return false end
+        
+        for _, unitItem in ipairs(units:GetChildren()) do
+            local success, nameLabel = pcall(function()
+                return unitItem.Container.Holder.Main.UnitName
+            end)
+            
+            if success and nameLabel and nameLabel.Text then
+                if nameLabel.Text:lower():find(TARGET:lower()) then
+                    return true
+                end
             end
         end
+        return false
+        
+    elseif currentPlace == 16146832113 then
+        -- แมพ 16146832113 → เช็คจาก GlobalInventory CacheContainer
+        local success, cacheContainer = pcall(function()
+            return playerGui
+                :WaitForChild("Windows", 5)
+                :WaitForChild("GlobalInventory", 5)
+                .Holder.LeftContainer.FakeScrollingFrame.Items.CacheContainer
+        end)
+        
+        if not success or not cacheContainer then return false end
+        
+        for _, guidFrame in ipairs(cacheContainer:GetChildren()) do
+            local success, nameLabel = pcall(function()
+                return guidFrame.Container.Holder.Main.UnitName
+            end)
+            
+            if success and nameLabel and nameLabel.Text then
+                if nameLabel.Text:lower():find(TARGET:lower()) then
+                    return true
+                end
+            end
+        end
+        return false
+        
+    else
+        -- แมพอื่น → แสดงว่าไม่มี Ice Queen
+        return false
     end
-    return false
 end
 
 -- =========================
--- Update HUD
+-- Update HUD (ห่อ pcall ป้องกัน error)
 -- =========================
 RunService.RenderStepped:Connect(function()
-    userLabel.Text   = "🤖 User : "..player.Name
-    levelLabel.Text  = "⬆️ Level : "..getLevel()
-    presents26Label.Text = "🎁 Presents : "..getPresents26()
+    local ok = pcall(function()
+        userLabel.Text   = "🤖 User : "..player.Name
+        levelLabel.Text  = "⬆️ Level : "..getLevel()
+        presents26Label.Text = "🎁 Presents : "..getPresents26()
 
-    local has = checkIceQueenFromUnits()
-    player:SetAttribute("HasIceQueen", hasQueen)
+        local has = checkIceQueen()
+        player:SetAttribute("HasIceQueen", has)
 
-    icequeenLabel.Text = "👑 Ice Queen : "..(hasQueen and "✅" or "❌")
+        icequeenLabel.Text = "👑 Ice Queen : "..(has and "✅" or "❌")
+    end)
 end)
+
+print("สคริปต์ทำงานแล้ว - เช็ค Ice Queen แยกตาม PlaceId")
