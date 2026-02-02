@@ -48,14 +48,14 @@ end
 
 local userLabel   = createBar("User", 0.18, Color3.fromRGB(52,152,219), "🧑")
 local levelLabel  = createBar("Level", 0.36, Color3.fromRGB(46,204,113), "🏆")
-local leavesLabel = createBar("Leaves", 0.54, Color3.fromRGB(241,196,15), "🍀")
-local lichLabel   = createBar("LichKing", 0.72, Color3.fromRGB(231,76,60), "👑")
+local presents26Label = createBar("Presents26", 0.54, Color3.fromRGB(241,196,15), "🎁")
+local icequeenLabel   = createBar("IceQueen", 0.72, Color3.fromRGB(231,76,60), "👑")
 
 -- =========================
 -- Attribute
 -- =========================
-if player:GetAttribute("HasLichKing") == nil then
-    player:SetAttribute("HasLichKing", false)
+if player:GetAttribute("HasIceQueen") == nil then
+    player:SetAttribute("HasIceQueen", false)
 end
 
 -- =========================
@@ -70,17 +70,17 @@ local function getAttr(list)
 end
 
 local function getLevel()
-    return getAttr({"Level","level","PlayerLevel","Player_Level"})
+    return getAttr({"level"})
 end
 
-local function getLeaves()
-    return getAttr({"Leaves","leaves","Leaf","leaf","LeavesAmount"})
+local function getPresents26()
+    return getAttr({"Presents26"})
 end
 
 -- =========================
 -- 🔍 เช็ค Lich จาก Units GUI (ไม่สน GUID)
 -- =========================
-local TARGET = "lich"
+local TARGET = "Ice Queen (Release)"
 
 local function getUnitsContainer()
     local ok, container = pcall(function()
@@ -106,7 +106,7 @@ local function checkLichFromUnits()
         if ok and nameLabel and nameLabel.Text then
             if nameLabel.Text:lower():find(TARGET) then
                 -- 🔑 เจอ Lich + GUID
-                -- print("FOUND LICH | GUID =", unitItem.Name)
+                -- print("FOUND ICE QUEEN | GUID =", unitItem.Name)
                 return true
             end
         end
@@ -120,10 +120,10 @@ end
 RunService.RenderStepped:Connect(function()
     userLabel.Text   = "🤖 User : "..player.Name
     levelLabel.Text  = "⬆️ Level : "..getLevel()
-    leavesLabel.Text = "🍀 Leaves : "..getLeaves()
+    presents26Label.Text = "🎁 Presents : "..getPresents26()
 
     local hasLich = checkLichFromUnits()
     player:SetAttribute("HasLichKing", hasLich)
 
-    lichLabel.Text = "👑 Lich King : "..(hasLich and "✅" or "❌")
+    icequeenLabel.Text = "👑 Ice Queen : "..(hasQueen and "✅" or "❌")
 end)
