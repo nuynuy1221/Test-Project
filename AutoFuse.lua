@@ -153,19 +153,19 @@ task.spawn(function()
             continue
         end
         
-        local allAbove30 = true
+        local allAbove40 = true
         
         for _, main in ipairs(mainUnits) do
             local level = getUnitLevel(main.Item)
-            if level < 30 then
-                allAbove30 = false
+            if level < 40 then
+                allAbove40 = false
                 summonSpecial()
                 fuseUnits(main.Item, main.Name)
             end
         end
         
         if allAbove30 then
-            print("ตัวหลักทั้งหมดถึง Level 30 แล้ว — หยุด Fuse")
+            print("ตัวหลักทั้งหมดถึง Level 40 แล้ว — หยุด Fuse")
             break
         end
         
