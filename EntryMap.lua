@@ -72,7 +72,7 @@ local function startMatch()
         }
     }
     pcall(function() lobbyEvent:FireServer(unpack(addMatchArgs)) end)
-    task.wait(3)
+    task.wait(30)
     
     pcall(function() lobbyEvent:FireServer("StartMatch") end)
     print("🚀 ด่าน Story เริ่มแล้ว")
@@ -159,6 +159,7 @@ while true do
                     task.wait(2)  -- รอ summon เสร็จ
                 else
                     print("Presents26 ไม่พอ → เริ่ม Winter")
+                    task.wait(30)
                     GoWinter()
                 end
             end
@@ -171,3 +172,4 @@ while true do
     
     task.wait(1.5)  -- ป้องกัน spam เร็วเกิน
 end
+
