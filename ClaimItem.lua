@@ -54,9 +54,10 @@ task.spawn(function()
     end
 
     local codes = {
-        "FreedomsCallPart2",
-        "PinkVillainRaid",
-        "FallEndsSoon"
+        "ALMOST100K",
+        "ItsCold",
+        "Memoria",
+        "Winter26"
     }
 
     print("เริ่มรีดีมโค้ด...")
@@ -77,7 +78,7 @@ for _, reward in ipairs({
     {"Special", 2},
     {"Special", 4},
     {"Special", 7},
-    {"Fall", 7},
+    {"Winter", 7},
 }) do
     safeFire(DailyRewardEvent, {"Claim", reward})
 end
