@@ -49,20 +49,20 @@ local function startMatch()
 end
 
 -- =========================
--- ฟังก์ชัน FallEvent / Lich
+-- ฟังก์ชัน WinterEvent
 -- =========================
-local function GoLich()
-    print("🔥 Level ≥ 11 → FallEvent")
+local function GoWinter()
+    print("🔥 Level ≥ 11 → WinterEvent")
 
     local args = {"Create", "Infinite"}
-    rep.Networking.Fall.FallLTMEvent:FireServer(unpack(args))
+    rep.Networking.Winter.WinterLTMEvent:FireServer(unpack(args))
     task.wait(3)
     local args2 = {"StartMatch"}
     rep.Networking.LobbyEvent:FireServer(unpack(args2))
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Leaves จาก Attribute
+-- ฟังก์ชันเช็ค Presents26 จาก Attribute
 -- =========================
 local function toNumber(str)
     if not str then return 0 end
@@ -74,8 +74,8 @@ local function toNumber(str)
     return tonumber(str) or 0
 end
 
-local function getLeaves()
-    for _, attrName in ipairs({"Leaves","leaves","Leaf","leaf","LeavesAmount","LeavesEarned"}) do
+local function getPresents26()
+    for _, attrName in ipairs({"Presents26"}) do
         local v = player:GetAttribute(attrName)
         if v ~= nil then
             return tonumber(v) or toNumber(v)
@@ -85,9 +85,9 @@ local function getLeaves()
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Lich King (ไม่สน GUID)
+-- ฟังก์ชันเช็ค Ice Queen (ไม่สน GUID)
 -- =========================
-local function hasLichKing()
+local function hasIceQueen()
     local ok, itemsFolder = pcall(function()
         local folder = playerGui:FindFirstChild("Windows") and
                        playerGui.Windows:FindFirstChild("GlobalInventory") and
@@ -105,7 +105,7 @@ local function hasLichKing()
                                 item.Container:FindFirstChild("Holder") and
                                 item.Container.Holder:FindFirstChild("Main") and
                                 item.Container.Holder.Main:FindFirstChild("UnitName")
-            if unitNameObj and unitNameObj.Text:match("Lich King") then
+            if unitNameObj and unitNameObj.Text:match("Ice Queen (Release)") then
                 return true
             end
         end
@@ -117,28 +117,28 @@ end
 -- Event
 -- =========================
 local SummonEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
-local Summons = { [1]="SummonMany", [2]="Fall", [3]=10 }
+local Summons = { [1]="SummonMany", [2]="Winter26", [3]=10 }
 
 -- =========================
 -- ลูปหลัก
 -- =========================
 while true do
     local level = getLevel()
-    local leaves = getLeaves()
+    local Presents26 = getPresents26()
  
     if level < 11 then
         startMatch()
     else
-        if hasLichKing() then
-            print("✅ มี Lich King → เริ่มเกม")
-            GoLich() 
+        if hasIceQueen() then
+            print("✅ มี Ice Queen (Release) → เริ่มเกม")
+            GoWinter() 
         else
-            if leaves >= 1500 then
+            if Presents26 >= 1500 then
                 SummonEvent:FireServer(unpack(Summons))
                 task.wait(1)
             else
-                print("⏩ Leaves ไม่พอ → เริ่มเกม")
-                GoLich()
+                print("⏩ Presents26 ไม่พอ → เริ่มเกม")
+                GoWinter()
             end
         end
     end
