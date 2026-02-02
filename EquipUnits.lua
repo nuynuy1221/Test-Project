@@ -12,7 +12,7 @@ local rep = game:GetService("ReplicatedStorage")
 local equipEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("EquipEvent")
 
 local targetName1 = "Ackers"
-local targetName2 = "Luffo"
+local targetName2 = "Bounty Hunter"
 
 -- Path inventory
 local inventoryPath = player.PlayerGui
@@ -40,8 +40,8 @@ local function findAckersGUID()
 	return nil
 end
 
--- ฟังก์ชันค้นหา GUID ของ Luffo
-local function findLuffoGUID()
+-- ฟังก์ชันค้นหา GUID ของ Hunter
+local function findHunterGUID()
 	for _, item in ipairs(cacheContainer:GetChildren()) do
 		local ok, name = pcall(function()
 			return item.Container.Holder.Main.UnitName.Text
@@ -56,13 +56,13 @@ end
 -- Auto loop
 local lastEquipped = {
     Ackers = nil,
-    Luffo  = nil
+    Hunter  = nil
 }
 
 task.spawn(function()
     while true do
         local guidAckers = findAckersGUID()
-        local guidLuffo  = findLuffoGUID()
+        local guidHunter  = findHunterGUID()
 
         -- Equip Ackers
         if guidAckers then
@@ -81,22 +81,23 @@ task.spawn(function()
         end
 		
         wait(1)
-        -- Equip Luffo
-        if guidLuffo then
-            if lastEquipped.Luffo ~= guidLuffo then
-                print("✅ พบ Luffo | GUID =", guidLuffo)
+        -- Equip Hunter
+        if guidHunter then
+            if lastEquipped.Hunter ~= guidHunter then
+                print("✅ พบ Hunter | GUID =", guidHunter)
                 local args = {
                     [1] = "Equip",
-                    [2] = guidLuffo
+                    [2] = guidHunter
                 }
                 equipEvent:FireServer(unpack(args))
-                print("🎯 Equip Luffo สำเร็จ")
-                lastEquipped.Luffo = guidLuffo
+                print("🎯 Equip Bounty Hunter สำเร็จ")
+                lastEquipped.Hunter = guidHunter
             end
         else
-            print("❌ ไม่พบ Luffo — จะเช็คใหม่…")
+            print("❌ ไม่พบ Hunter — จะเช็คใหม่…")
         end
 
         task.wait(3)
     end
 end)
+
