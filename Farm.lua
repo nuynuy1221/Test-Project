@@ -29,7 +29,7 @@ local CONFIG = {
     UNIT_ID = 241,
     
     STOP_LEVEL = 11,
-    STOP_PRESENTS26 = 45000,
+    STOP_PRESENTS26 = 100000,
     
     NORMAL_POSITIONS = {
         Vector3.new(445.17132568359375, 2.29998779296875, -342.4508056640625),
@@ -231,3 +231,4 @@ task.spawn(function()
 end)
 
 print("✅ Auto Farm Script")
+
