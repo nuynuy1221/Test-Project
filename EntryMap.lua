@@ -7,18 +7,50 @@ if game.PlaceId ~= targetPlace then
     return
 end
 
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 local rep = game:GetService("ReplicatedStorage")
-local playerGui = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui", 10)
 
 -- =========================
--- ฟังก์ชันดึงเลเวลจาก GUI
+-- ฟังก์ชันดึงเลเวลจาก Attribute (เสถียรกว่า GUI)
 -- =========================
 local function getLevel()
-    local levelLabel = player.PlayerGui.HUD.Main.Level:WaitForChild("Level")
-    local text = levelLabel.Text or ""
-    local number = string.match(text, "Level%s+(%d+)")
-    return tonumber(number) or 0
+    -- ชื่อ Attribute ที่น่าจะเป็น (เรียงจากน่าจะเจอมากที่สุด)
+    local possibleLevelNames = {
+        "Level",          -- ชื่อมาตรฐานที่สุด
+        "PlayerLevel",
+        "level",
+        "playerLevel",
+        "CurrentLevel"
+    }
+    
+    for _, name in ipairs(possibleLevelNames) do
+        local value = player:GetAttribute(name)
+        if value ~= nil then
+            local num = tonumber(value)
+            if num then
+                print("พบ Level จาก Attribute:", name, "=", num)  -- debug ว่าชื่อจริงคืออะไร
+                return num
+            end
+        end
+    end
+    
+    -- ถ้าไม่เจอเลย ให้ fallback ไปเช็ค GUI เดิม (หรือ return 0)
+    warn("ไม่พบ Attribute Level — fallback ไปเช็ค GUI")
+    local success, levelLabel = pcall(function()
+        return playerGui:WaitForChild("HUD", 5)
+                     :WaitForChild("Main", 5)
+                     :WaitForChild("Level", 5)  -- หรือปรับ path ตามจริง
+    end)
+    
+    if success and levelLabel and levelLabel:IsA("TextLabel") then
+        local text = levelLabel.Text or ""
+        local num = text:match("%d+")  -- ดึงตัวเลขแรก
+        return tonumber(num) or 0
+    end
+    
+    return 0  -- ถ้าไม่เจอทั้งคู่
 end
 
 -- =========================
@@ -26,11 +58,12 @@ end
 -- =========================
 local function startMatch()
     print("📌 Level ต่ำกว่า 11 → เข้าด่าน Story อัตโนมัติ")
-
-    -- AddMatch
-    local Namek1 = {
-        [1] = "AddMatch",
-        [2] = {
+    
+    local lobbyEvent = rep:WaitForChild("Networking"):WaitForChild("LobbyEvent")
+    
+    local addMatchArgs = {
+        "AddMatch",
+        {
             ["Difficulty"] = "Normal",
             ["Act"] = "Act1",
             ["StageType"] = "Story",
@@ -38,14 +71,11 @@ local function startMatch()
             ["FriendsOnly"] = false
         }
     }
-    rep.Networking.LobbyEvent:FireServer(unpack(Namek1))
+    pcall(function() lobbyEvent:FireServer(unpack(addMatchArgs)) end)
     task.wait(3)
-
-    -- StartMatch
-    local Namek2 = { [1] = "StartMatch" }
-    rep.Networking.LobbyEvent:FireServer(unpack(Namek2))
-
-    print("🚀 ด่านเริ่มต้นแล้ว")
+    
+    pcall(function() lobbyEvent:FireServer("StartMatch") end)
+    print("🚀 ด่าน Story เริ่มแล้ว")
 end
 
 -- =========================
@@ -53,94 +83,91 @@ end
 -- =========================
 local function GoWinter()
     print("🔥 Level ≥ 11 → WinterEvent")
-
-    local args = {"Create", "Infinite"}
-    rep.Networking.Winter.WinterLTMEvent:FireServer(unpack(args))
+    
+    local winterEvent = rep:WaitForChild("Networking"):WaitForChild("Winter"):WaitForChild("WinterLTMEvent")
+    local lobbyEvent = rep:WaitForChild("Networking"):WaitForChild("LobbyEvent")
+    
+    pcall(function() winterEvent:FireServer("Create", "Infinite") end)
     task.wait(3)
-    local args2 = {"StartMatch"}
-    rep.Networking.LobbyEvent:FireServer(unpack(args2))
+    pcall(function() lobbyEvent:FireServer("StartMatch") end)
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Presents26 จาก Attribute
+-- เช็ค Presents26 (ทำให้ง่ายขึ้น)
 -- =========================
-local function toNumber(str)
-    if not str then return 0 end
-    str = tostring(str):gsub("[^%d.]", "")
-    local firstDot = str:find("%.") 
-    if firstDot then
-        str = str:sub(1, firstDot) .. str:sub(firstDot+1):gsub("%.", "")
-    end
-    return tonumber(str) or 0
-end
-
 local function getPresents26()
-    for _, attrName in ipairs({"Presents26"}) do
-        local v = player:GetAttribute(attrName)
-        if v ~= nil then
-            return tonumber(v) or toNumber(v)
-        end
+    local value = player:GetAttribute("Presents26")
+    if value ~= nil then
+        return tonumber(value) or 0
     end
     return 0
 end
 
 -- =========================
--- ฟังก์ชันเช็ค Ice Queen (ไม่สน GUID)
+-- เช็ค Ice Queen (Release)
 -- =========================
 local function hasIceQueen()
-    local ok, itemsFolder = pcall(function()
-        local folder = playerGui:FindFirstChild("Windows") and
-                       playerGui.Windows:FindFirstChild("GlobalInventory") and
-                       playerGui.Windows.GlobalInventory:FindFirstChild("Holder") and
-                       playerGui.Windows.GlobalInventory.Holder:FindFirstChild("LeftContainer") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer:FindFirstChild("FakeScrollingFrame") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame:FindFirstChild("Items") and
-                       playerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame.Items:FindFirstChild("CacheContainer")
-        return folder and folder:GetChildren() or {}
+    local success, cache = pcall(function()
+        return playerGui:WaitForChild("Windows", 8)
+                     :WaitForChild("GlobalInventory", 8)
+                     .Holder.LeftContainer.FakeScrollingFrame.Items.CacheContainer
     end)
-
-    if ok and itemsFolder then
-        for _, item in ipairs(itemsFolder) do
-            local unitNameObj = item:FindFirstChild("Container") and
-                                item.Container:FindFirstChild("Holder") and
-                                item.Container.Holder:FindFirstChild("Main") and
-                                item.Container.Holder.Main:FindFirstChild("UnitName")
-            if unitNameObj and unitNameObj.Text:match("Ice Queen (Release)") then
-                return true
-            end
+    
+    if not success or not cache then
+        warn("ไม่เจอ Inventory Cache — ลองเปิด Inventory ก่อน")
+        return false
+    end
+    
+    for _, item in ipairs(cache:GetChildren()) do
+        local unitName = item:FindFirstChild("Container", true) 
+                      and item.Container:FindFirstChild("Holder", true)
+                      and item.Container.Holder:FindFirstChild("Main", true)
+                      and item.Container.Holder.Main:FindFirstChild("UnitName")
+        if unitName and unitName.Text and unitName.Text:find("Ice Queen %(Release%)") then
+            return true
         end
     end
     return false
 end
 
 -- =========================
--- Event
+-- Summon Event
 -- =========================
-local SummonEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
-local Summons = { [1]="SummonMany", [2]="Winter26", [3]=10 }
+local summonEvent = rep:WaitForChild("Networking"):WaitForChild("Units"):WaitForChild("SummonEvent")
+local summonArgs = {"SummonMany", "Winter26", 10}
 
 -- =========================
--- ลูปหลัก
+-- ลูปหลัก (เพิ่ม pcall ห่อเพื่อป้องกัน crash)
 -- =========================
 while true do
-    local level = getLevel()
-    local Presents26 = getPresents26()
- 
-    if level < 11 then
-        startMatch()
-    else
-        if hasIceQueen() then
-            print("✅ มี Ice Queen (Release) → เริ่มเกม")
-            GoWinter() 
+    local success, err = pcall(function()
+        local level = getLevel()
+        local presents = getPresents26()
+        
+        print("Level:", level, "| Presents26:", presents, "| มี Ice Queen:", hasIceQueen())
+        
+        if level < 11 then
+            startMatch()
         else
-            if Presents26 >= 1500 then
-                SummonEvent:FireServer(unpack(Summons))
-                task.wait(1)
-            else
-                print("⏩ Presents26 ไม่พอ → เริ่มเกม")
+            if hasIceQueen() then
+                print("✅ มี Ice Queen (Release) → เริ่ม Winter")
                 GoWinter()
+            else
+                if presents >= 1500 then
+                    print("Summon Winter26 x10")
+                    summonEvent:FireServer(unpack(summonArgs))
+                    task.wait(2)  -- รอ summon เสร็จ
+                else
+                    print("Presents26 ไม่พอ → เริ่ม Winter")
+                    GoWinter()
+                end
             end
         end
+    end)
+    
+    if not success then
+        warn("Error ใน loop:", err)
     end
-    task.wait(1)
+    
+    task.wait(1.5)  -- ป้องกัน spam เร็วเกิน
 end
