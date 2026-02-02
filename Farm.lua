@@ -22,12 +22,16 @@ if not UnitEvent then
 end
 
 -- =========================
--- Settings
+-- Settings (เพิ่ม Bounty Hunter)
 -- =========================
+local UNITS = {
+    { Name = "Ackers", ID = 241 },
+    { Name = "Bounty Hunter", ID = 347 }
+}
+
+local CURRENT_UNIT_INDEX = 1  -- สลับระหว่าง 1 และ 2
+
 local CONFIG = {
-    UNIT_NAME = "Ackers",
-    UNIT_ID = 241,
-    
     STOP_LEVEL = 11,
     STOP_PRESENTS26 = 100000,
     
@@ -37,10 +41,15 @@ local CONFIG = {
         Vector3.new(445.0626220703125, 2.29998779296875, -344.2766418457031)
     },
     
+    -- เพิ่มจุดวาง Bounty Hunter ตามที่คุณให้มา
     WINTER_POSITIONS = {
         Vector3.new(-277.788330078125, 251.36184692382812, 97.78836059570312),
         Vector3.new(-275.8544921875, 251.36184692382812, 97.96082305908203),
-        Vector3.new(-273.71441650390625, 251.36184692382812, 97.8721694946289)
+        Vector3.new(-273.71441650390625, 251.36184692382812, 97.8721694946289),
+        Vector3.new(-251.5613555908203, 251.78878784179688, 93.48413848876953),
+        Vector3.new(-248.2109375, 251.78878784179688, 98.70359802246094),
+        Vector3.new(-244.3953857421875, 251.78878784179688, 93.43465423583984),
+        Vector3.new(-241.75245666503906, 251.78878784179688, 98.86803436279297)
     },
     
     PLACE_DELAY = 0.42,
@@ -61,12 +70,16 @@ end
 
 -- Safe FireServer
 local function placeUnit(pos)
-    local renderTable = { CONFIG.UNIT_NAME, CONFIG.UNIT_ID, pos, 0 }
+    local unit = UNITS[CURRENT_UNIT_INDEX]
+    local renderTable = { unit.Name, unit.ID, pos, 0 }
     local slotTable = { SlotIndex = CONFIG.SLOT_INDEX }
     
     pcall(function()
         UnitEvent:FireServer("Render", renderTable, slotTable)
     end)
+    
+    -- สลับตัวละครในรอบถัดไป
+    CURRENT_UNIT_INDEX = (CURRENT_UNIT_INDEX % #UNITS) + 1
 end
 
 local function getCurrentStageAct()
@@ -157,10 +170,8 @@ task.spawn(function()
         -- ด่าน Winter — Infinite
         else
             if hasQueen then
-                -- มี Ice Queen (Release) แล้ว → ฟาร์มต่อไปเรื่อย ๆ ไม่ต้องหยุด ไม่วาร์ป
                 stopScript = false
             else
-                -- ยังไม่มี Ice Queen (Release) → ฟาร์มจน Presents26 ครบ แล้ววาร์ป
                 if Presents26 >= CONFIG.STOP_PRESENTS26 then
                     if not stopScript then
                         stopScript = true
@@ -177,7 +188,7 @@ task.spawn(function()
     end
 end)
 
--- วางตัว
+-- วางตัว (สลับ Ackers และ Bounty Hunter)
 task.spawn(function()
     while true do
         if stopScript then
@@ -208,7 +219,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Upgrade
+-- Auto Upgrade (ครอบคลุมทั้ง Ackers และ Bounty Hunter)
 task.spawn(function()
     while true do
         if not stopScript then
@@ -230,5 +241,4 @@ task.spawn(function()
     end
 end)
 
-print("✅ Auto Farm Script")
-
+print("✅ Auto Farm Script (Ackers + Bounty Hunter)")
