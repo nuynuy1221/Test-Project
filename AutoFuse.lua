@@ -106,7 +106,7 @@ local function summonSpecial()
         [3] = 5
     }
     SummonEvent:FireServer(unpack(SummonFuse))
-    task.wait(1)
+    task.wait(0.2)
 end
 
 -- =========================
@@ -136,7 +136,7 @@ local function fuseUnits(mainUnitItem, targetName)
                 }
             }
             FuseEvent:FireServer(unpack(args))
-            task.wait(0.5)
+            task.wait(0.2)
         end
     end
 end
@@ -149,7 +149,7 @@ task.spawn(function()
         local mainUnits = getMainUnits()
         if #mainUnits == 0 then
             print("ไม่พบตัวหลักใด ๆ ใน Inventory")
-            task.wait(1)
+            task.wait(0.2)
             continue
         end
         
@@ -169,6 +169,6 @@ task.spawn(function()
             break
         end
         
-        task.wait(1)
+        task.wait(0.1)
     end
 end)
