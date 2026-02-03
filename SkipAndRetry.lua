@@ -74,6 +74,7 @@ task.spawn(function()
 
         local wave = getWave()
         if wave >= 20 then
+            task.wait(5)
             voteMatchRestart()
         end
     end
