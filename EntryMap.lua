@@ -127,15 +127,18 @@ local function hasIceQueen()
     for _, group in ipairs(items) do
         for _, cache in ipairs(group:GetChildren()) do
             if cache.Name == "CacheContainer" then
-                local unitName =
-                    cache:FindFirstChild("Container", true)
-                    and cache.Container:FindFirstChild("Holder", true)
-                    and cache.Container.Holder:FindFirstChild("Main", true)
-                    and cache.Container.Holder.Main:FindFirstChild("UnitName")
+                for _, group in ipairs(items) do
+                    for _, uuid in ipairs(group:GetChildren()) do
+                        local ok, label = pcall(function()
+                            return uuid.Container.Holder.Main.UnitName
+                        end)
 
-                if unitName and unitName.Text then
-                    if unitName.Text:find("Ice Queen %(Release%)") then
-                        return true
+                        if ok and label then
+                            local name = (label.ContentText or label.Text or ""):gsub("%s+$","")
+                            if name == "Ice Queen (Release)" then
+                                return true
+                            end
+                        end
                     end
                 end
             end
@@ -165,15 +168,18 @@ local function hasIceQueenRest()
     for _, group in ipairs(items) do
         for _, cache in ipairs(group:GetChildren()) do
             if cache.Name == "CacheContainer" then
-                local memoriaName =
-                    cache:FindFirstChild("Container", true)
-                    and cache.Container:FindFirstChild("Holder", true)
-                    and cache.Container.Holder:FindFirstChild("Main", true)
-                    and cache.Container.Holder.Main:FindFirstChild("MemoriaName")
+                for _, group in ipairs(items) do
+                    for _, uuid in ipairs(group:GetChildren()) do
+                        local ok, label = pcall(function()
+                            return uuid.Container.Holder.Main.MemoriaName
+                        end)
 
-                if memoriaName and memoriaName.ContentText then
-                    if memoriaName.ContentText:find("Ice Queen's Rest") then
-                        return true
+                        if ok and label then
+                            local name = (label.ContentText or ""):gsub("%s+$","")
+                            if name == "Ice Queen's Rest" then
+                                return true
+                            end
+                        end
                     end
                 end
             end
@@ -250,4 +256,5 @@ while true do
     
     task.wait(1.5)  -- ป้องกัน spam เร็วเกิน
 end
+
 
