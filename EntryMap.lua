@@ -222,6 +222,7 @@ while true do
         else
             if hasUnit then
                 print("✅ มี Ice Queen (Release) → เริ่ม Winter")
+                task.wait(60)
                 GoWinter()
             else
                 if presents >= 1500 then
@@ -236,7 +237,7 @@ while true do
                     end
                 else
                     print("Presents26 ไม่พอ → เริ่ม Winter")
-                    task.wait(30)
+                    task.wait(60)
                     GoWinter()
                 end
             end
@@ -249,3 +250,4 @@ while true do
     
     task.wait(1.5)  -- ป้องกัน spam เร็วเกิน
 end
+
