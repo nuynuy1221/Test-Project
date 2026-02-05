@@ -4,13 +4,11 @@ task.wait(2)
 -- ================= CONFIG CHECK (REQUIRED) =================
 local Config = getgenv().Config
 
--- ไม่มี Config เลย
 if not Config then
     warn("❌ ไม่มี Config — ไม่ซื้อ Reroll ให้")
     return
 end
 
--- ไม่มีการเปิดฟีเจอร์นี้
 if Config.BuyTraitReroll ~= true then
     warn("❌ BuyTraitReroll ไม่ได้เปิด — ไม่ซื้อ Reroll ให้")
     return
@@ -29,18 +27,21 @@ end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ShopEvent = ReplicatedStorage
     :WaitForChild("Networking")
-    :WaitForChild("Summer")
-    :WaitForChild("ShopEvent")
+    :WaitForChild("Shop")
+    :WaitForChild("PurchaseItem")
 -- ============================================
 
-local BuyTraits = {
-    "Purchase",
-    {"TraitRerolls", 1}
+-- ================= BUY CONFIG =================
+local BuyArgs = {
+    "Winter Shop",     -- Shop Name
+    "TraitRerolls",    -- Item
+    1                  -- Amount
 }
+-- =============================================
 
-for i = 1, 45 do
+for i = 1, 50 do
     local success, err = pcall(function()
-        ShopEvent:FireServer(unpack(BuyTraits))
+        ShopEvent:FireServer(unpack(BuyArgs))
     end)
 
     if not success then
